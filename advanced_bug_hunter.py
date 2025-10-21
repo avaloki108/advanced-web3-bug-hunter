@@ -19,6 +19,7 @@ from advanced.llm_reasoning_engine import AdvancedLLMReasoner
 from advanced.enhanced_fuzzing_orchestrator import EnhancedFuzzingOrchestrator, FuzzingConfig, FuzzingStrategy
 from advanced.persistent_learning import PersistentLearningDB, get_learning_db
 from advanced.benchmark_comparison import BenchmarkSystem
+from advanced.rare_vulnerability_detectors import RareVulnerabilityDetector
 
 # Import existing modules
 from llm.llm_integration import LLMVulnerabilityAnalyzer
@@ -44,6 +45,7 @@ class AdvancedWeb3BugHunter:
         self.symbolic_executor = AdvancedSymbolicExecutor()
         self.pattern_detector = NovelPatternDetector()
         self.anomaly_detector = BehavioralAnomalyDetector()
+        self.rare_detector = RareVulnerabilityDetector()  # NEW: Rare vulnerability detector
         self.llm_reasoner = AdvancedLLMReasoner(
             openai_key=self.config.get('openai_key'),
             anthropic_key=self.config.get('anthropic_key')
@@ -99,7 +101,7 @@ class AdvancedWeb3BugHunter:
         self._print_pattern_summary(patterns)
 
         # Phase 2: Behavioral Anomaly Detection
-        print("\n[2/6] Running Behavioral Anomaly Detection...")
+        print("\n[2/7] Running Behavioral Anomaly Detection...")
         print("-" * 70)
         anomalies = self.anomaly_detector.analyze_contract(contract_code, contract_name)
         self.results["analysis_results"]["anomalies"] = {
@@ -110,9 +112,30 @@ class AdvancedWeb3BugHunter:
         }
         print(f"Found {len(anomalies)} behavioral anomalies")
         self._print_anomaly_summary(anomalies)
+        
+        # Phase 2.5: Rare & Niche Vulnerability Detection (NEW!)
+        print("\n[2.5/7] Running Rare & Niche Vulnerability Detection...")
+        print("-" * 70)
+        print("🔍 Searching for obscure vulnerabilities that standard tools miss...")
+        rare_vulns = self.rare_detector.detect_all(contract_code)
+        self.results["analysis_results"]["rare_vulnerabilities"] = {
+            "total_rare": len(rare_vulns),
+            "critical": len([r for r in rare_vulns if r.severity == "critical"]),
+            "high": len([r for r in rare_vulns if r.severity == "high"]),
+            "findings": [self._serialize_rare_vuln(r) for r in rare_vulns]
+        }
+        print(f"Found {len(rare_vulns)} rare/niche vulnerabilities!")
+        if rare_vulns:
+            print("\n⭐ RARE FINDINGS (likely missed by other tools):")
+            for i, vuln in enumerate(rare_vulns[:5], 1):
+                print(f"  {i}. [{vuln.severity.upper()}] {vuln.name}")
+                print(f"     {vuln.description}")
+                print(f"     Confidence: {vuln.confidence:.0%}")
+        else:
+            print("No rare vulnerabilities detected (good sign!)")
 
         # Phase 3: Symbolic Execution
-        print("\n[3/6] Running Symbolic Execution Analysis...")
+        print("\n[3/7] Running Symbolic Execution Analysis...")
         print("-" * 70)
         symbolic_results = self._run_symbolic_analysis(contract_code)
         self.results["analysis_results"]["symbolic_execution"] = symbolic_results
@@ -121,7 +144,7 @@ class AdvancedWeb3BugHunter:
         # Phase 4: LLM Multi-Agent Reasoning (WITH LEARNING!)
         llm_insights = []
         if self.config.get('use_llm', True):
-            print("\n[4/6] Running LLM Multi-Agent Reasoning (Enhanced with Learning)...")
+            print("\n[4/7] Running LLM Multi-Agent Reasoning (Enhanced with Learning)...")
             print("-" * 70)
             
             # Get enhanced prompt with learned patterns
@@ -150,20 +173,20 @@ class AdvancedWeb3BugHunter:
             print(f"LLM analysis completed with {len(llm_results)} reasoning modes")
             print(f"Extracted {len(llm_insights)} insights for learning")
         else:
-            print("\n[4/6] Skipping LLM analysis (disabled in config)")
+            print("\n[4/7] Skipping LLM analysis (disabled in config)")
 
         # Phase 5: Enhanced Fuzzing
         if self.config.get('use_fuzzing', True):
-            print("\n[5/6] Running Enhanced Fuzzing Campaign...")
+            print("\n[5/7] Running Enhanced Fuzzing Campaign...")
             print("-" * 70)
             fuzzing_results = self._run_enhanced_fuzzing(contract_code)
             self.results["analysis_results"]["fuzzing"] = fuzzing_results
             print(f"Fuzzing campaign completed")
         else:
-            print("\n[5/6] Skipping fuzzing (disabled in config)")
+            print("\n[5/7] Skipping fuzzing (disabled in config)")
 
         # Phase 6: Generate Final Report & LEARN!
-        print("\n[6/6] Generating Comprehensive Report & Recording Learning...")
+        print("\n[6/7] Generating Comprehensive Report & Recording Learning...")
         print("-" * 70)
         self._generate_final_report()
         
@@ -186,6 +209,14 @@ class AdvancedWeb3BugHunter:
                 'severity': anomaly.severity,
                 'type': 'anomaly',
                 'confidence': anomaly.confidence
+            })
+            
+        for rare_vuln in rare_vulns:
+            all_vulnerabilities.append({
+                'name': rare_vuln.name,
+                'severity': rare_vuln.severity,
+                'type': 'rare',
+                'confidence': rare_vuln.confidence
             })
             
         # Record to learning database
@@ -400,6 +431,20 @@ class AdvancedWeb3BugHunter:
             "property_tests_count": len(result.property_tests),
             "confidence": result.confidence
         }
+    
+    def _serialize_rare_vuln(self, vuln) -> Dict[str, Any]:
+        """Serialize rare vulnerability"""
+        return {
+            "name": vuln.name,
+            "description": vuln.description,
+            "severity": vuln.severity,
+            "confidence": vuln.confidence,
+            "affected_code": vuln.affected_code,
+            "exploit_scenario": vuln.exploit_scenario,
+            "remediation": vuln.remediation,
+            "references": vuln.references,
+            "cve_id": vuln.cve_id
+        }
 
     def _generate_final_report(self):
         """Generate comprehensive final report"""
@@ -425,6 +470,12 @@ class AdvancedWeb3BugHunter:
             total_findings += anomalies["total_anomalies"]
             critical_count += anomalies["critical"]
             high_count += anomalies["high"]
+            
+        if "rare_vulnerabilities" in analysis:
+            rare = analysis["rare_vulnerabilities"]
+            total_findings += rare["total_rare"]
+            critical_count += rare["critical"]
+            high_count += rare["high"]
 
         print(f"\nTotal Findings: {total_findings}")
         print(f"  Critical: {critical_count}")
