@@ -1,0 +1,79 @@
+✓ Loaded learning database: 5 records
+======================================================================
+ ADVANCED WEB3 BUG HUNTER - COMPREHENSIVE ANALYSIS
+ 🧠 LEARNING-ENABLED: Tool improves with every scan!
+======================================================================
+Contract: /tmp/vuln_test.sol
+Timestamp: 2025-10-21T12:45:04.599351
+Previous scans: 5 | 
+Patterns learned: 11 | 
+Current accuracy: 100.0%
+
+
+[1/6] Running Novel Pattern Detection...
+----------------------------------------------------------------------
+Found 15 novel vulnerability patterns
+
+Top Findings:
+  1. [MEDIUM] just_in_time_liquidity_attack
+     Function 'deposit' allows instant liquidity addition/removal
+  2. [HIGH] stale_oracle_price_exploitation
+     Oracle price usage without freshness validation
+  3. [HIGH] stale_oracle_price_exploitation
+     Oracle price usage without freshness validation
+  4. [HIGH] stale_oracle_price_exploitation
+     Oracle price usage without freshness validation
+  5. [HIGH] stale_oracle_price_exploitation
+     Oracle price usage without freshness validation
+
+[2/7] Running Behavioral Anomaly Detection...
+----------------------------------------------------------------------
+Found 5 behavioral anomalies
+
+Top Findings:
+  1. [HIGH] multiple_external_calls_no_guard
+     Function 'latestAnswer' makes 11 external calls without reentrancy guard
+  2. [HIGH] multiple_external_calls_no_guard
+     Function 'deposit' makes 3 external calls without reentrancy guard
+  3. [HIGH] multiple_external_calls_no_guard
+     Function 'withdraw' makes 4 external calls without reentrancy guard
+  4. [CRITICAL] potential_backdoor
+     Emergency function without access control
+  5. [HIGH] no_oracle_freshness_check
+     Oracle price used without freshness validation
+
+[2.5/7] Running Rare & Niche Vulnerability Detection...
+----------------------------------------------------------------------
+🔍 Searching for obscure vulnerabilities that standard tools miss...
+Found 0 rare/niche vulnerabilities!
+No rare vulnerabilities detected (good sign!)
+
+[3/7] Running Symbolic Execution Analysis...
+----------------------------------------------------------------------
+Symbolic execution completed
+
+[4/7] Skipping LLM analysis (disabled or unavailable)
+
+[5/7] Skipping fuzzing (disabled in config)
+
+[6/7] Generating Comprehensive Report & Recording Learning...
+----------------------------------------------------------------------
+
+======================================================================
+ COMPREHENSIVE ANALYSIS REPORT
+======================================================================
+
+Total Findings: 20
+  Critical: 3
+  High: 15
+
+Overall Risk Level: CRITICAL
+
+Detailed report saved to: bug_hunter_report.json
+✓ Saved learning database: 6 records
+✓ Learning recorded: SCAN-20251021-124504-47680757
+✓ Total analyses in knowledge base: 6
+
+======================================================================
+ ANALYSIS COMPLETE
+======================================================================
