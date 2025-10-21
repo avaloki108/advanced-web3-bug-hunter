@@ -95,6 +95,55 @@ class AdvancedLLMReasoner:
             reasoning_chain=self._extract_reasoning_chain(response)
         )
 
+    def query_llm(self, prompt: str, model: str = "gpt-4", temperature: float = 0.7) -> str:
+        """
+        Query LLM with proper error handling
+        Supports OpenAI, Anthropic (Claude), and XAI (Grok)
+        """
+        try:
+            # Try OpenAI first
+            if self.openai_key:
+                from openai import OpenAI
+                client = OpenAI(api_key=self.openai_key)
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=2000,
+                    temperature=temperature
+                )
+                return response.choices[0].message.content
+                
+            # Try Anthropic/Claude
+            elif self.anthropic_key:
+                import anthropic
+                client = anthropic.Anthropic(api_key=self.anthropic_key)
+                message = client.messages.create(
+                    model="claude-3-opus-20240229",
+                    max_tokens=2000,
+                    messages=[{"role": "user", "content": prompt}]
+                )
+                return message.content[0].text
+                
+            # Try XAI/Grok
+            elif os.getenv("XAI_API_KEY"):
+                from openai import OpenAI
+                client = OpenAI(
+                    api_key=os.getenv("XAI_API_KEY"),
+                    base_url="https://api.x.ai/v1"
+                )
+                response = client.chat.completions.create(
+                    model="grok-beta",
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=2000,
+                    temperature=temperature
+                )
+                return response.choices[0].message.content
+            else:
+                return "LLM API key not configured. Set OPENAI_API_KEY, ANTHROPIC_API_KEY, or XAI_API_KEY."
+                
+        except Exception as e:
+            return f"LLM Error: {str(e)}"
+
     def _build_adversarial_prompt(self, contract_code: str, static_results: Dict[str, Any]) -> str:
         """Build prompt for adversarial reasoning"""
         return f"""You are an expert Web3 security researcher and ethical hacker.

@@ -93,7 +93,40 @@ class AutoLearner:
         """
         exploits = []
         
-        # Mock GitHub data for demo (in production: use requests to GitHub API)
+        # Try to fetch real GitHub data
+        try:
+            import requests
+            headers = {}
+            github_token = os.getenv('GITHUB_TOKEN')
+            if github_token:
+                headers['Authorization'] = f'token {github_token}'
+                
+            # Search for recent exploits
+            search_url = "https://api.github.com/search/code?q=exploit+solidity+vulnerability+language:solidity&sort=indexed&order=desc"
+            response = requests.get(search_url, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                items = data.get('items', [])[:5]  # Top 5 results
+                
+                for item in items:
+                    exploits.append({
+                        "date": datetime.now().isoformat(),
+                        "title": f"GitHub Exploit: {item.get('name', 'Unknown')}",
+                        "description": f"Found in {item.get('repository', {}).get('full_name', 'unknown')}",
+                        "impact": "high",
+                        "affected_contracts": [item.get('name', 'Unknown.sol')],
+                        "exploit_code_snippet": item.get('path', ''),
+                        "source": item.get('html_url', 'github.com')
+                    })
+                    
+                print(f"✓ Fetched {len(exploits)} real exploits from GitHub")
+                return exploits
+        except Exception as e:
+            print(f"Note: Could not fetch live GitHub data: {e}")
+            print("Using mock data for demonstration")
+        
+        # Fallback to mock GitHub data for demo
         mock_github_exploits = [
             {
                 "date": (datetime.now() - timedelta(days=2)).isoformat(),

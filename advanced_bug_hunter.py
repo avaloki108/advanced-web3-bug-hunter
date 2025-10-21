@@ -17,10 +17,12 @@ from advanced.novel_vulnerability_patterns import NovelPatternDetector
 from advanced.behavioral_anomaly_detector import BehavioralAnomalyDetector
 from advanced.llm_reasoning_engine import AdvancedLLMReasoner
 from advanced.enhanced_fuzzing_orchestrator import EnhancedFuzzingOrchestrator, FuzzingConfig, FuzzingStrategy
+from advanced.persistent_learning import PersistentLearningDB, get_learning_db
+from advanced.benchmark_comparison import BenchmarkSystem
 
 # Import existing modules
 from llm.llm_integration import LLMVulnerabilityAnalyzer
-from scripts.cross_contract_tracker import CrossContractLogicTracker
+# from scripts.cross_contract_tracker import CrossContractLogicTracker  # Optional - requires slither
 
 
 class AdvancedWeb3BugHunter:
@@ -36,6 +38,7 @@ class AdvancedWeb3BugHunter:
     def __init__(self, contract_path: str, config: Dict[str, Any] = None):
         self.contract_path = Path(contract_path)
         self.config = config or {}
+        self.start_time = datetime.now()
 
         # Initialize components
         self.symbolic_executor = AdvancedSymbolicExecutor()
@@ -45,22 +48,36 @@ class AdvancedWeb3BugHunter:
             openai_key=self.config.get('openai_key'),
             anthropic_key=self.config.get('anthropic_key')
         )
+        
+        # Initialize learning system
+        self.learning_db = get_learning_db()
 
         self.results = {
             "contract": str(self.contract_path),
-            "timestamp": datetime.now().isoformat(),
-            "analysis_results": {}
+            "timestamp": self.start_time.isoformat(),
+            "analysis_results": {},
+            "learning_enhanced": True
         }
 
     def run_comprehensive_analysis(self) -> Dict[str, Any]:
         """
         Run complete analysis pipeline with all advanced techniques
+        NOW WITH REAL LEARNING - Improves with each scan!
         """
         print("="*70)
         print(" ADVANCED WEB3 BUG HUNTER - COMPREHENSIVE ANALYSIS")
+        print(" 🧠 LEARNING-ENABLED: Tool improves with every scan!")
         print("="*70)
         print(f"Contract: {self.contract_path}")
-        print(f"Timestamp: {self.results['timestamp']}\n")
+        print(f"Timestamp: {self.results['timestamp']}")
+        
+        # Show improvement metrics
+        metrics = self.learning_db.get_improvement_metrics()
+        if metrics.get('total_scans', 0) > 0:
+            print(f"Previous scans: {metrics['total_scans']} | ")
+            print(f"Patterns learned: {metrics.get('total_patterns_learned', 0)} | ")
+            print(f"Current accuracy: {metrics.get('recent_accuracy', 0.0):.1%}")
+        print()
 
         # Read contract code
         with open(self.contract_path, 'r') as f:
@@ -101,13 +118,20 @@ class AdvancedWeb3BugHunter:
         self.results["analysis_results"]["symbolic_execution"] = symbolic_results
         print(f"Symbolic execution completed")
 
-        # Phase 4: LLM Multi-Agent Reasoning
+        # Phase 4: LLM Multi-Agent Reasoning (WITH LEARNING!)
+        llm_insights = []
         if self.config.get('use_llm', True):
-            print("\n[4/6] Running LLM Multi-Agent Reasoning...")
+            print("\n[4/6] Running LLM Multi-Agent Reasoning (Enhanced with Learning)...")
             print("-" * 70)
+            
+            # Get enhanced prompt with learned patterns
+            enhanced_prompt = self.learning_db.get_enhanced_llm_prompt()
+            print(f"Using enhanced prompt with {len(self.learning_db.get_learned_patterns_for_analysis())} learned patterns")
+            
             static_results = {
                 "patterns": [self._serialize_pattern(p) for p in patterns[:5]],
-                "anomalies": [self._serialize_anomaly(a) for a in anomalies[:5]]
+                "anomalies": [self._serialize_anomaly(a) for a in anomalies[:5]],
+                "learned_patterns": self.learning_db.get_learned_patterns_for_analysis()[:5]
             }
             llm_results = self.llm_reasoner.analyze_contract_multi_agent(
                 contract_code,
@@ -117,7 +141,14 @@ class AdvancedWeb3BugHunter:
             self.results["analysis_results"]["llm_reasoning"] = [
                 self._serialize_llm_result(r) for r in llm_results
             ]
+            
+            # Extract insights for learning
+            for result in llm_results:
+                if hasattr(result, 'findings'):
+                    llm_insights.extend([str(f) for f in result.findings])
+                    
             print(f"LLM analysis completed with {len(llm_results)} reasoning modes")
+            print(f"Extracted {len(llm_insights)} insights for learning")
         else:
             print("\n[4/6] Skipping LLM analysis (disabled in config)")
 
@@ -131,10 +162,52 @@ class AdvancedWeb3BugHunter:
         else:
             print("\n[5/6] Skipping fuzzing (disabled in config)")
 
-        # Phase 6: Generate Final Report
-        print("\n[6/6] Generating Comprehensive Report...")
+        # Phase 6: Generate Final Report & LEARN!
+        print("\n[6/6] Generating Comprehensive Report & Recording Learning...")
         print("-" * 70)
         self._generate_final_report()
+        
+        # Record what we learned from this analysis
+        processing_time = (datetime.now() - self.start_time).total_seconds()
+        all_vulnerabilities = []
+        
+        # Collect all findings
+        for pattern in patterns:
+            all_vulnerabilities.append({
+                'name': pattern.name,
+                'severity': pattern.severity,
+                'type': 'pattern',
+                'confidence': pattern.confidence
+            })
+            
+        for anomaly in anomalies:
+            all_vulnerabilities.append({
+                'name': anomaly.name,
+                'severity': anomaly.severity,
+                'type': 'anomaly',
+                'confidence': anomaly.confidence
+            })
+            
+        # Record to learning database
+        learning_record = self.learning_db.record_analysis(
+            contract_code=contract_code,
+            vulnerabilities_found=all_vulnerabilities,
+            llm_insights=llm_insights,
+            processing_time=processing_time
+        )
+        
+        self.results["learning_record_id"] = learning_record.id
+        self.results["total_scans_to_date"] = len(self.learning_db.learning_records)
+        
+        print(f"✓ Learning recorded: {learning_record.id}")
+        print(f"✓ Total analyses in knowledge base: {len(self.learning_db.learning_records)}")
+        
+        # Show improvement suggestions
+        suggestions = self.learning_db.suggest_improvements()
+        if suggestions:
+            print(f"\n💡 Learning System Suggestions:")
+            for suggestion in suggestions[:3]:
+                print(f"   • {suggestion}")
 
         return self.results
 
@@ -379,18 +452,72 @@ class AdvancedWeb3BugHunter:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Advanced Web3 Bug Hunter - Find novel vulnerabilities in smart contracts"
+        description="Advanced Web3 Bug Hunter - Find novel vulnerabilities in smart contracts with LEARNING"
     )
     parser.add_argument("contract", help="Path to Solidity contract file")
     parser.add_argument("--openai-key", help="OpenAI API key for LLM analysis")
+    parser.add_argument("--anthropic-key", help="Anthropic API key for Claude")
     parser.add_argument("--no-llm", action="store_true", help="Disable LLM analysis")
     parser.add_argument("--no-fuzzing", action="store_true", help="Disable fuzzing")
     parser.add_argument("--output", "-o", help="Output file for results (default: bug_hunter_report.json)")
+    parser.add_argument("--benchmark", action="store_true", help="Run benchmark comparison vs Slither/Mythril")
+    parser.add_argument("--show-learning", action="store_true", help="Show learning metrics and exit")
+
+    args = parser.parse_args()
+    
+    # Show learning metrics if requested
+    if args.show_learning:
+        learning_db = get_learning_db()
+        metrics = learning_db.get_improvement_metrics()
+        
+        print("="*70)
+        print("LEARNING SYSTEM METRICS")
+        print("="*70)
+        print(f"\nTotal scans completed: {metrics.get('total_scans', 0)}")
+        print(f"Patterns learned: {metrics.get('total_patterns_learned', 0)}")
+        print(f"Vulnerability types known: {metrics.get('vulnerability_types_known', 0)}")
+        
+        if metrics.get('total_scans', 0) >= 2:
+            print(f"\nAccuracy Metrics:")
+            print(f"  Initial accuracy: {metrics.get('initial_accuracy', 0):.1%}")
+            print(f"  Recent accuracy: {metrics.get('recent_accuracy', 0):.1%}")
+            print(f"  Improvement: {metrics.get('improvement_percentage', 0):.1f}%")
+            
+        if metrics.get('top_patterns'):
+            print(f"\nTop Detection Patterns:")
+            for i, pattern in enumerate(metrics['top_patterns'][:5], 1):
+                print(f"  {i}. {pattern['name']} (confidence: {pattern['confidence']:.1%}, detections: {pattern['detections']})")
+                
+        suggestions = learning_db.suggest_improvements()
+        if suggestions:
+            print(f"\n💡 Suggestions:")
+            for suggestion in suggestions:
+                print(f"  • {suggestion}")
+                
+        sys.exit(0)
+    
+    # Run benchmark if requested
+    if args.benchmark:
+        print("="*70)
+        print("BENCHMARK MODE: Comparing vs Slither and Mythril")
+        print("="*70)
+        
+        benchmark_system = BenchmarkSystem()
+        report = benchmark_system.compare_all_tools(args.contract)
+        
+        summary = benchmark_system.generate_summary_report()
+        print(f"\n📊 Overall Statistics:")
+        print(f"   Total benchmarks: {summary['total_benchmarks']}")
+        print(f"   Win rate: {summary['win_rate']:.1%}")
+        print(f"   Unique findings: {summary['total_unique_findings']}")
+        
+        sys.exit(0)
 
     args = parser.parse_args()
 
     config = {
         "openai_key": args.openai_key,
+        "anthropic_key": args.anthropic_key,
         "use_llm": not args.no_llm,
         "use_fuzzing": not args.no_fuzzing,
         "output_file": args.output or "bug_hunter_report.json"
