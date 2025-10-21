@@ -86,6 +86,11 @@ class BehavioralAnomalyDetector:
         self.anomalies.extend(self._detect_delegatecall_risks(contract_code))
         self.anomalies.extend(self._detect_unchecked_return_values(contract_code))
         self.anomalies.extend(self._detect_denial_of_service_patterns(contract_code))
+        
+        # NEW POWERFUL ANOMALY DETECTORS (from PR #2)
+        self.anomalies.extend(self._detect_centralization_risks(contract_code))
+        self.anomalies.extend(self._detect_oracle_dependency_risks(contract_code))
+        self.anomalies.extend(self._detect_flash_loan_vulnerable_patterns(contract_code))
 
         return self.anomalies
 
@@ -552,6 +557,109 @@ class BehavioralAnomalyDetector:
                             remediation="Use pull payment pattern or handle failures gracefully"
                         ))
 
+        return anomalies
+
+    def _detect_centralization_risks(self, contract_code: str) -> List[Anomaly]:
+        """
+        NEW: Detect excessive centralization that creates rug pull risk
+        """
+        anomalies = []
+        
+        # Count owner-only functions
+        owner_funcs = len(re.findall(r'onlyOwner|require.*owner.*msg\.sender', contract_code))
+        total_funcs = len(re.findall(r'function\s+\w+', contract_code))
+        
+        if total_funcs > 0:
+            centralization_ratio = owner_funcs / total_funcs
+            
+            if centralization_ratio > 0.3:  # More than 30% owner-only
+                anomalies.append(Anomaly(
+                    anomaly_type=AnomalyType.SUSPICIOUS_COMPLEXITY,
+                    name="excessive_centralization",
+                    description=f"{owner_funcs}/{total_funcs} functions require owner privileges ({centralization_ratio*100:.1f}%)",
+                    severity="medium",
+                    confidence=0.90,
+                    location="access_control",
+                    evidence={"owner_functions": owner_funcs, "total_functions": total_funcs},
+                    potential_exploit="Owner has excessive control - rug pull risk",
+                    remediation="Implement timelock, multisig, or decentralized governance"
+                ))
+        
+        return anomalies
+
+    def _detect_oracle_dependency_risks(self, contract_code: str) -> List[Anomaly]:
+        """
+        NEW: Detect risky oracle usage patterns
+        """
+        anomalies = []
+        
+        # Check for oracle usage
+        oracle_patterns = [r'getPrice', r'latestAnswer', r'consult', r'oracle', r'Chainlink']
+        has_oracle = any(re.search(pattern, contract_code, re.IGNORECASE) for pattern in oracle_patterns)
+        
+        if has_oracle:
+            # Check for freshness validation
+            has_freshness_check = bool(re.search(r'updatedAt|timestamp.*require|stale', contract_code, re.IGNORECASE))
+            
+            if not has_freshness_check:
+                anomalies.append(Anomaly(
+                    anomaly_type=AnomalyType.ANTI_PATTERN,
+                    name="no_oracle_freshness_check",
+                    description="Oracle price used without freshness validation",
+                    severity="high",
+                    confidence=0.85,
+                    location="oracle_integration",
+                    evidence={"has_freshness_check": False},
+                    potential_exploit="Stale prices can be exploited for arbitrage",
+                    remediation="Validate: require(block.timestamp - updatedAt < MAX_DELAY)"
+                ))
+        
+        return anomalies
+
+    def _detect_flash_loan_vulnerable_patterns(self, contract_code: str) -> List[Anomaly]:
+        """
+        NEW: Detect patterns vulnerable to flash loan attacks
+        """
+        anomalies = []
+        
+        # Check for balance-based logic without reentrancy guard
+        balance_logic = r'balanceOf.*if|if.*balanceOf'
+        has_balance_logic = bool(re.search(balance_logic, contract_code))
+        has_reentrancy_guard = bool(re.search(r'nonReentrant|ReentrancyGuard|locked', contract_code))
+        
+        if has_balance_logic and not has_reentrancy_guard:
+            anomalies.append(Anomaly(
+                anomaly_type=AnomalyType.ANTI_PATTERN,
+                name="balance_based_logic_without_guard",
+                description="Balance-based conditionals without reentrancy protection",
+                severity="high",
+                confidence=0.75,
+                location="balance_checks",
+                evidence={"has_balance_logic": True, "has_guard": False},
+                potential_exploit="Flash loan can manipulate balance checks",
+                remediation="Add reentrancy guard or use internal accounting"
+            ))
+        
+        # Check for price calculations using reserves without TWAP
+        reserve_price_calc = r'reserve.*\/.*reserve|getReserves'
+        has_reserve_pricing = bool(re.search(reserve_price_calc, contract_code, re.IGNORECASE))
+        
+        if has_reserve_pricing:
+            has_twap = bool(re.search(r'TWAP|timeWeighted|observe', contract_code, re.IGNORECASE))
+            
+            if not has_twap:
+                anomalies.append(Anomaly(
+                    anomaly_type=AnomalyType.ANTI_PATTERN,
+                    name="spot_price_without_twap",
+                    description="Uses spot price from reserves without TWAP",
+                    severity="critical",
+                    confidence=0.90,
+                    location="price_calculations",
+                    evidence={"uses_reserves": True, "has_twap": False},
+                    potential_exploit="Flash loan can manipulate spot price for profit",
+                    remediation="Use TWAP oracle or Chainlink price feed"
+                ))
+        
         return anomalies
 
 
