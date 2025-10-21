@@ -17,10 +17,13 @@ from advanced.novel_vulnerability_patterns import NovelPatternDetector
 from advanced.behavioral_anomaly_detector import BehavioralAnomalyDetector
 from advanced.llm_reasoning_engine import AdvancedLLMReasoner
 from advanced.enhanced_fuzzing_orchestrator import EnhancedFuzzingOrchestrator, FuzzingConfig, FuzzingStrategy
+from advanced.persistent_learning import PersistentLearningDB, get_learning_db
+from advanced.benchmark_comparison import BenchmarkSystem
+from advanced.rare_vulnerability_detectors import RareVulnerabilityDetector
 
 # Import existing modules
 from llm.llm_integration import LLMVulnerabilityAnalyzer
-from scripts.cross_contract_tracker import CrossContractLogicTracker
+# from scripts.cross_contract_tracker import CrossContractLogicTracker  # Optional - requires slither
 
 
 class AdvancedWeb3BugHunter:
@@ -36,31 +39,47 @@ class AdvancedWeb3BugHunter:
     def __init__(self, contract_path: str, config: Dict[str, Any] = None):
         self.contract_path = Path(contract_path)
         self.config = config or {}
+        self.start_time = datetime.now()
 
         # Initialize components
         self.symbolic_executor = AdvancedSymbolicExecutor()
         self.pattern_detector = NovelPatternDetector()
         self.anomaly_detector = BehavioralAnomalyDetector()
+        self.rare_detector = RareVulnerabilityDetector()  # NEW: Rare vulnerability detector
         self.llm_reasoner = AdvancedLLMReasoner(
             openai_key=self.config.get('openai_key'),
             anthropic_key=self.config.get('anthropic_key')
         )
+        
+        # Initialize learning system
+        self.learning_db = get_learning_db()
 
         self.results = {
             "contract": str(self.contract_path),
-            "timestamp": datetime.now().isoformat(),
-            "analysis_results": {}
+            "timestamp": self.start_time.isoformat(),
+            "analysis_results": {},
+            "learning_enhanced": True
         }
 
     def run_comprehensive_analysis(self) -> Dict[str, Any]:
         """
         Run complete analysis pipeline with all advanced techniques
+        NOW WITH REAL LEARNING - Improves with each scan!
         """
         print("="*70)
         print(" ADVANCED WEB3 BUG HUNTER - COMPREHENSIVE ANALYSIS")
+        print(" 🧠 LEARNING-ENABLED: Tool improves with every scan!")
         print("="*70)
         print(f"Contract: {self.contract_path}")
-        print(f"Timestamp: {self.results['timestamp']}\n")
+        print(f"Timestamp: {self.results['timestamp']}")
+        
+        # Show improvement metrics
+        metrics = self.learning_db.get_improvement_metrics()
+        if metrics.get('total_scans', 0) > 0:
+            print(f"Previous scans: {metrics['total_scans']} | ")
+            print(f"Patterns learned: {metrics.get('total_patterns_learned', 0)} | ")
+            print(f"Current accuracy: {metrics.get('recent_accuracy', 0.0):.1%}")
+        print()
 
         # Read contract code
         with open(self.contract_path, 'r') as f:
@@ -82,7 +101,7 @@ class AdvancedWeb3BugHunter:
         self._print_pattern_summary(patterns)
 
         # Phase 2: Behavioral Anomaly Detection
-        print("\n[2/6] Running Behavioral Anomaly Detection...")
+        print("\n[2/7] Running Behavioral Anomaly Detection...")
         print("-" * 70)
         anomalies = self.anomaly_detector.analyze_contract(contract_code, contract_name)
         self.results["analysis_results"]["anomalies"] = {
@@ -93,21 +112,49 @@ class AdvancedWeb3BugHunter:
         }
         print(f"Found {len(anomalies)} behavioral anomalies")
         self._print_anomaly_summary(anomalies)
+        
+        # Phase 2.5: Rare & Niche Vulnerability Detection (NEW!)
+        print("\n[2.5/7] Running Rare & Niche Vulnerability Detection...")
+        print("-" * 70)
+        print("🔍 Searching for obscure vulnerabilities that standard tools miss...")
+        rare_vulns = self.rare_detector.detect_all(contract_code)
+        self.results["analysis_results"]["rare_vulnerabilities"] = {
+            "total_rare": len(rare_vulns),
+            "critical": len([r for r in rare_vulns if r.severity == "critical"]),
+            "high": len([r for r in rare_vulns if r.severity == "high"]),
+            "findings": [self._serialize_rare_vuln(r) for r in rare_vulns]
+        }
+        print(f"Found {len(rare_vulns)} rare/niche vulnerabilities!")
+        if rare_vulns:
+            print("\n⭐ RARE FINDINGS (likely missed by other tools):")
+            for i, vuln in enumerate(rare_vulns[:5], 1):
+                print(f"  {i}. [{vuln.severity.upper()}] {vuln.name}")
+                print(f"     {vuln.description}")
+                print(f"     Confidence: {vuln.confidence:.0%}")
+        else:
+            print("No rare vulnerabilities detected (good sign!)")
 
         # Phase 3: Symbolic Execution
-        print("\n[3/6] Running Symbolic Execution Analysis...")
+        print("\n[3/7] Running Symbolic Execution Analysis...")
         print("-" * 70)
         symbolic_results = self._run_symbolic_analysis(contract_code)
         self.results["analysis_results"]["symbolic_execution"] = symbolic_results
         print(f"Symbolic execution completed")
 
-        # Phase 4: LLM Multi-Agent Reasoning
+        # Phase 4: LLM Multi-Agent Reasoning (WITH LEARNING!)
+        llm_insights = []
         if self.config.get('use_llm', True):
-            print("\n[4/6] Running LLM Multi-Agent Reasoning...")
+            print("\n[4/7] Running LLM Multi-Agent Reasoning (Enhanced with Learning)...")
             print("-" * 70)
+            
+            # Get enhanced prompt with learned patterns
+            enhanced_prompt = self.learning_db.get_enhanced_llm_prompt()
+            print(f"Using enhanced prompt with {len(self.learning_db.get_learned_patterns_for_analysis())} learned patterns")
+            
             static_results = {
                 "patterns": [self._serialize_pattern(p) for p in patterns[:5]],
-                "anomalies": [self._serialize_anomaly(a) for a in anomalies[:5]]
+                "anomalies": [self._serialize_anomaly(a) for a in anomalies[:5]],
+                "learned_patterns": self.learning_db.get_learned_patterns_for_analysis()[:5]
             }
             llm_results = self.llm_reasoner.analyze_contract_multi_agent(
                 contract_code,
@@ -117,24 +164,81 @@ class AdvancedWeb3BugHunter:
             self.results["analysis_results"]["llm_reasoning"] = [
                 self._serialize_llm_result(r) for r in llm_results
             ]
+            
+            # Extract insights for learning
+            for result in llm_results:
+                if hasattr(result, 'findings'):
+                    llm_insights.extend([str(f) for f in result.findings])
+                    
             print(f"LLM analysis completed with {len(llm_results)} reasoning modes")
+            print(f"Extracted {len(llm_insights)} insights for learning")
         else:
-            print("\n[4/6] Skipping LLM analysis (disabled in config)")
+            print("\n[4/7] Skipping LLM analysis (disabled in config)")
 
         # Phase 5: Enhanced Fuzzing
         if self.config.get('use_fuzzing', True):
-            print("\n[5/6] Running Enhanced Fuzzing Campaign...")
+            print("\n[5/7] Running Enhanced Fuzzing Campaign...")
             print("-" * 70)
             fuzzing_results = self._run_enhanced_fuzzing(contract_code)
             self.results["analysis_results"]["fuzzing"] = fuzzing_results
             print(f"Fuzzing campaign completed")
         else:
-            print("\n[5/6] Skipping fuzzing (disabled in config)")
+            print("\n[5/7] Skipping fuzzing (disabled in config)")
 
-        # Phase 6: Generate Final Report
-        print("\n[6/6] Generating Comprehensive Report...")
+        # Phase 6: Generate Final Report & LEARN!
+        print("\n[6/7] Generating Comprehensive Report & Recording Learning...")
         print("-" * 70)
         self._generate_final_report()
+        
+        # Record what we learned from this analysis
+        processing_time = (datetime.now() - self.start_time).total_seconds()
+        all_vulnerabilities = []
+        
+        # Collect all findings
+        for pattern in patterns:
+            all_vulnerabilities.append({
+                'name': pattern.name,
+                'severity': pattern.severity,
+                'type': 'pattern',
+                'confidence': pattern.confidence
+            })
+            
+        for anomaly in anomalies:
+            all_vulnerabilities.append({
+                'name': anomaly.name,
+                'severity': anomaly.severity,
+                'type': 'anomaly',
+                'confidence': anomaly.confidence
+            })
+            
+        for rare_vuln in rare_vulns:
+            all_vulnerabilities.append({
+                'name': rare_vuln.name,
+                'severity': rare_vuln.severity,
+                'type': 'rare',
+                'confidence': rare_vuln.confidence
+            })
+            
+        # Record to learning database
+        learning_record = self.learning_db.record_analysis(
+            contract_code=contract_code,
+            vulnerabilities_found=all_vulnerabilities,
+            llm_insights=llm_insights,
+            processing_time=processing_time
+        )
+        
+        self.results["learning_record_id"] = learning_record.id
+        self.results["total_scans_to_date"] = len(self.learning_db.learning_records)
+        
+        print(f"✓ Learning recorded: {learning_record.id}")
+        print(f"✓ Total analyses in knowledge base: {len(self.learning_db.learning_records)}")
+        
+        # Show improvement suggestions
+        suggestions = self.learning_db.suggest_improvements()
+        if suggestions:
+            print(f"\n💡 Learning System Suggestions:")
+            for suggestion in suggestions[:3]:
+                print(f"   • {suggestion}")
 
         return self.results
 
@@ -327,6 +431,20 @@ class AdvancedWeb3BugHunter:
             "property_tests_count": len(result.property_tests),
             "confidence": result.confidence
         }
+    
+    def _serialize_rare_vuln(self, vuln) -> Dict[str, Any]:
+        """Serialize rare vulnerability"""
+        return {
+            "name": vuln.name,
+            "description": vuln.description,
+            "severity": vuln.severity,
+            "confidence": vuln.confidence,
+            "affected_code": vuln.affected_code,
+            "exploit_scenario": vuln.exploit_scenario,
+            "remediation": vuln.remediation,
+            "references": vuln.references,
+            "cve_id": vuln.cve_id
+        }
 
     def _generate_final_report(self):
         """Generate comprehensive final report"""
@@ -352,6 +470,12 @@ class AdvancedWeb3BugHunter:
             total_findings += anomalies["total_anomalies"]
             critical_count += anomalies["critical"]
             high_count += anomalies["high"]
+            
+        if "rare_vulnerabilities" in analysis:
+            rare = analysis["rare_vulnerabilities"]
+            total_findings += rare["total_rare"]
+            critical_count += rare["critical"]
+            high_count += rare["high"]
 
         print(f"\nTotal Findings: {total_findings}")
         print(f"  Critical: {critical_count}")
@@ -379,18 +503,72 @@ class AdvancedWeb3BugHunter:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Advanced Web3 Bug Hunter - Find novel vulnerabilities in smart contracts"
+        description="Advanced Web3 Bug Hunter - Find novel vulnerabilities in smart contracts with LEARNING"
     )
     parser.add_argument("contract", help="Path to Solidity contract file")
     parser.add_argument("--openai-key", help="OpenAI API key for LLM analysis")
+    parser.add_argument("--anthropic-key", help="Anthropic API key for Claude")
     parser.add_argument("--no-llm", action="store_true", help="Disable LLM analysis")
     parser.add_argument("--no-fuzzing", action="store_true", help="Disable fuzzing")
     parser.add_argument("--output", "-o", help="Output file for results (default: bug_hunter_report.json)")
+    parser.add_argument("--benchmark", action="store_true", help="Run benchmark comparison vs Slither/Mythril")
+    parser.add_argument("--show-learning", action="store_true", help="Show learning metrics and exit")
+
+    args = parser.parse_args()
+    
+    # Show learning metrics if requested
+    if args.show_learning:
+        learning_db = get_learning_db()
+        metrics = learning_db.get_improvement_metrics()
+        
+        print("="*70)
+        print("LEARNING SYSTEM METRICS")
+        print("="*70)
+        print(f"\nTotal scans completed: {metrics.get('total_scans', 0)}")
+        print(f"Patterns learned: {metrics.get('total_patterns_learned', 0)}")
+        print(f"Vulnerability types known: {metrics.get('vulnerability_types_known', 0)}")
+        
+        if metrics.get('total_scans', 0) >= 2:
+            print(f"\nAccuracy Metrics:")
+            print(f"  Initial accuracy: {metrics.get('initial_accuracy', 0):.1%}")
+            print(f"  Recent accuracy: {metrics.get('recent_accuracy', 0):.1%}")
+            print(f"  Improvement: {metrics.get('improvement_percentage', 0):.1f}%")
+            
+        if metrics.get('top_patterns'):
+            print(f"\nTop Detection Patterns:")
+            for i, pattern in enumerate(metrics['top_patterns'][:5], 1):
+                print(f"  {i}. {pattern['name']} (confidence: {pattern['confidence']:.1%}, detections: {pattern['detections']})")
+                
+        suggestions = learning_db.suggest_improvements()
+        if suggestions:
+            print(f"\n💡 Suggestions:")
+            for suggestion in suggestions:
+                print(f"  • {suggestion}")
+                
+        sys.exit(0)
+    
+    # Run benchmark if requested
+    if args.benchmark:
+        print("="*70)
+        print("BENCHMARK MODE: Comparing vs Slither and Mythril")
+        print("="*70)
+        
+        benchmark_system = BenchmarkSystem()
+        report = benchmark_system.compare_all_tools(args.contract)
+        
+        summary = benchmark_system.generate_summary_report()
+        print(f"\n📊 Overall Statistics:")
+        print(f"   Total benchmarks: {summary['total_benchmarks']}")
+        print(f"   Win rate: {summary['win_rate']:.1%}")
+        print(f"   Unique findings: {summary['total_unique_findings']}")
+        
+        sys.exit(0)
 
     args = parser.parse_args()
 
     config = {
         "openai_key": args.openai_key,
+        "anthropic_key": args.anthropic_key,
         "use_llm": not args.no_llm,
         "use_fuzzing": not args.no_fuzzing,
         "output_file": args.output or "bug_hunter_report.json"

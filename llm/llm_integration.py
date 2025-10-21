@@ -91,15 +91,21 @@ class LLMVulnerabilityAnalyzer:
 
     def _generate_response(self, prompt: str) -> str:
         """
-        Generate LLM response
+        Generate LLM response - Updated for OpenAI v1.0+
         """
-        response = self._openai.ChatCompletion.create(
-            model=self.model,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=2000,
-            temperature=0.3
-        )
-        return response.choices[0].message.content
+        try:
+            from openai import OpenAI
+            client = OpenAI(api_key=self.api_key)
+            response = client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=2000,
+                temperature=0.3
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            # Fallback to basic analysis if LLM fails
+            return f"LLM Error: {str(e)}. Falling back to static analysis only."
 
     def _parse_llm_response(self, response: str) -> Dict[str, Any]:
         # Parse LLM response into structured format
