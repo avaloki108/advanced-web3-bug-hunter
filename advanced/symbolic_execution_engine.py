@@ -568,6 +568,278 @@ contract OracleManipulationAttacker {{
 }}
 """
 
+    def analyze_multi_step_attack_sequences(self, 
+                                           contract_state: SymbolicState,
+                                           available_functions: List[str]) -> List[Dict[str, Any]]:
+        """
+        NEW: Discover multi-step attack sequences that lead to exploits
+        This finds complex attack chains humans rarely discover
+        """
+        vulnerabilities = []
+        max_steps = 5  # Maximum attack sequence length
+        
+        # Model attacker's goal: maximize profit or gain unauthorized access
+        initial_balance = z3.BitVec("attacker_initial_balance", 256)
+        final_balance = z3.BitVec("attacker_final_balance", 256)
+        
+        # Try different function call sequences
+        attack_sequences = [
+            ["deposit", "withdraw", "withdraw"],  # Double withdrawal
+            ["borrow", "manipulate_price", "liquidate"],  # Price manipulation
+            ["approve", "transferFrom", "transferFrom"],  # Approval exploit
+            ["addLiquidity", "swap", "removeLiquidity"],  # JIT liquidity
+            ["stake", "flashloan", "unstake"],  # Flash loan governance
+        ]
+        
+        for sequence in attack_sequences:
+            # Check if this sequence is profitable
+            profit = final_balance - initial_balance
+            
+            self.solver.push()
+            self.solver.add(z3.UGT(profit, 0))
+            self.solver.add(z3.UGT(initial_balance, 0))
+            self.solver.add(z3.ULE(initial_balance, 1000 * 10**18))
+            
+            if self.solver.check() == z3.sat:
+                model = self.solver.model()
+                vulnerabilities.append({
+                    "type": "multi_step_attack",
+                    "severity": "critical",
+                    "attack_sequence": sequence,
+                    "profit_potential": model[profit].as_long(),
+                    "description": f"Multi-step attack: {' -> '.join(sequence)}",
+                    "confidence": 0.75
+                })
+            
+            self.solver.pop()
+        
+        return vulnerabilities
+
+    def analyze_state_inconsistency_vulnerabilities(self,
+                                                   function_pairs: List[Tuple[str, str]]) -> List[Dict[str, Any]]:
+        """
+        NEW: Find state inconsistencies between function calls
+        Detects subtle logic flaws that auditors miss
+        """
+        vulnerabilities = []
+        
+        for func1, func2 in function_pairs:
+            # Model state variables
+            state_var = z3.BitVec(f"state_{func1}_{func2}", 256)
+            state_after_func1 = z3.BitVec(f"state_after_{func1}", 256)
+            state_after_func2 = z3.BitVec(f"state_after_{func2}", 256)
+            
+            # Check if calling func2 can create inconsistent state
+            self.solver.push()
+            
+            # Constraint: state changes in unexpected way
+            inconsistency_condition = z3.And(
+                state_after_func1 != state_var,
+                state_after_func2 != state_after_func1,
+                z3.UGT(state_var, state_after_func2)  # State decreased unexpectedly
+            )
+            
+            self.solver.add(inconsistency_condition)
+            
+            if self.solver.check() == z3.sat:
+                model = self.solver.model()
+                vulnerabilities.append({
+                    "type": "state_inconsistency",
+                    "severity": "high",
+                    "affected_functions": [func1, func2],
+                    "description": f"State inconsistency between {func1} and {func2}",
+                    "example": {
+                        "initial_state": model[state_var].as_long(),
+                        "after_func1": model[state_after_func1].as_long(),
+                        "after_func2": model[state_after_func2].as_long()
+                    }
+                })
+            
+            self.solver.pop()
+        
+        return vulnerabilities
+
+    def analyze_economic_invariant_violations(self,
+                                            invariants: List[str]) -> List[Dict[str, Any]]:
+        """
+        NEW: Check if economic invariants can be violated
+        Finds protocol-breaking conditions
+        """
+        vulnerabilities = []
+        
+        # Common economic invariants
+        total_supply = z3.BitVec("total_supply", 256)
+        sum_of_balances = z3.BitVec("sum_of_balances", 256)
+        reserves = z3.BitVec("reserves", 256)
+        liabilities = z3.BitVec("liabilities", 256)
+        
+        # Test invariants
+        invariant_checks = [
+            ("supply_balance_mismatch", z3.Not(total_supply == sum_of_balances)),
+            ("insolvency", z3.ULT(reserves, liabilities)),
+            ("negative_balance", z3.ULT(sum_of_balances, 0)),
+        ]
+        
+        for inv_name, inv_condition in invariant_checks:
+            self.solver.push()
+            self.solver.add(inv_condition)
+            self.solver.add(z3.UGT(total_supply, 0))
+            self.solver.add(z3.ULE(total_supply, 1000000 * 10**18))
+            
+            if self.solver.check() == z3.sat:
+                model = self.solver.model()
+                vulnerabilities.append({
+                    "type": "invariant_violation",
+                    "severity": "critical",
+                    "invariant": inv_name,
+                    "description": f"Economic invariant '{inv_name}' can be violated",
+                    "example": {
+                        "total_supply": model[total_supply].as_long() if inv_name != "negative_balance" else 0,
+                        "sum_of_balances": model[sum_of_balances].as_long() if inv_name != "insolvency" else 0,
+                    }
+                })
+            
+            self.solver.pop()
+        
+        return vulnerabilities
+
+    def analyze_precision_loss_exploits(self,
+                                       operations: List[Tuple[str, str]]) -> List[Dict[str, Any]]:
+        """
+        NEW: Find exploitable precision loss in mathematical operations
+        Critical for DeFi protocols with token calculations
+        """
+        vulnerabilities = []
+        
+        for op_type, op_desc in operations:
+            # Model precision loss scenario
+            amount = z3.BitVec("amount", 256)
+            divisor = z3.BitVec("divisor", 256)
+            multiplier = z3.BitVec("multiplier", 256)
+            
+            # Division before multiplication (loses precision)
+            result_bad = z3.UDiv(amount, divisor) * multiplier
+            # Multiplication before division (preserves precision)
+            result_good = z3.UDiv(amount * multiplier, divisor)
+            
+            # Check if there's a difference (precision loss)
+            precision_loss = result_good - result_bad
+            
+            self.solver.push()
+            self.solver.add(z3.UGT(precision_loss, 0))  # Loss > 0
+            self.solver.add(z3.UGT(amount, 0))
+            self.solver.add(z3.UGT(divisor, 1))
+            self.solver.add(z3.UGT(multiplier, 1))
+            self.solver.add(z3.ULE(amount, 100000 * 10**18))
+            
+            if self.solver.check() == z3.sat:
+                model = self.solver.model()
+                loss_amount = model[precision_loss].as_long()
+                
+                if loss_amount > 0:  # Only report if actual loss
+                    vulnerabilities.append({
+                        "type": "precision_loss",
+                        "severity": "high",
+                        "operation": op_desc,
+                        "loss_amount": loss_amount,
+                        "description": f"Precision loss in {op_desc}: loses {loss_amount} wei per operation",
+                        "exploit_scenario": "Attacker can accumulate losses through repeated operations",
+                        "example": {
+                            "amount": model[amount].as_long(),
+                            "divisor": model[divisor].as_long(),
+                            "multiplier": model[multiplier].as_long(),
+                            "loss": loss_amount
+                        }
+                    })
+            
+            self.solver.pop()
+        
+        return vulnerabilities
+
+    def analyze_access_control_bypasses(self,
+                                       protected_functions: List[str],
+                                       access_checks: List[str]) -> List[Dict[str, Any]]:
+        """
+        NEW: Find ways to bypass access control mechanisms
+        """
+        vulnerabilities = []
+        
+        # Model access control
+        is_owner = z3.Bool("is_owner")
+        is_authorized = z3.Bool("is_authorized")
+        passed_check = z3.Bool("passed_check")
+        
+        # Model conditions where unauthorized user can bypass
+        for func in protected_functions:
+            for check in access_checks:
+                self.solver.push()
+                
+                # Condition: not owner but can execute
+                bypass_condition = z3.And(
+                    z3.Not(is_owner),
+                    z3.Not(is_authorized),
+                    passed_check  # But somehow passed the check
+                )
+                
+                self.solver.add(bypass_condition)
+                
+                if self.solver.check() == z3.sat:
+                    vulnerabilities.append({
+                        "type": "access_control_bypass",
+                        "severity": "critical",
+                        "function": func,
+                        "check": check,
+                        "description": f"Access control for {func} can be bypassed",
+                        "confidence": 0.70
+                    })
+                
+                self.solver.pop()
+        
+        return vulnerabilities
+
+    def analyze_timestamp_manipulation_exploits(self) -> List[Dict[str, Any]]:
+        """
+        NEW: Find exploitable timestamp dependencies
+        """
+        vulnerabilities = []
+        
+        # Model timestamp manipulation
+        block_timestamp = z3.BitVec("block_timestamp", 256)
+        expected_timestamp = z3.BitVec("expected_timestamp", 256)
+        critical_operation_time = z3.BitVec("critical_operation_time", 256)
+        
+        # Miners can manipulate ~15 seconds
+        max_manipulation = z3.BitVecVal(15, 256)
+        
+        self.solver.push()
+        
+        # Check if manipulation enables exploit
+        manipulation_condition = z3.And(
+            z3.UGT(block_timestamp, expected_timestamp),
+            z3.ULE(block_timestamp - expected_timestamp, max_manipulation),
+            z3.UGE(block_timestamp, critical_operation_time)
+        )
+        
+        self.solver.add(manipulation_condition)
+        self.solver.add(z3.UGT(expected_timestamp, 0))
+        
+        if self.solver.check() == z3.sat:
+            model = self.solver.model()
+            vulnerabilities.append({
+                "type": "timestamp_manipulation",
+                "severity": "medium",
+                "description": "Time-sensitive operation vulnerable to timestamp manipulation",
+                "manipulation_window": "15 seconds",
+                "example": {
+                    "expected": model[expected_timestamp].as_long(),
+                    "manipulated": model[block_timestamp].as_long()
+                }
+            })
+        
+        self.solver.pop()
+        
+        return vulnerabilities
+
 
 # Example usage and testing
 def demonstrate_symbolic_execution():

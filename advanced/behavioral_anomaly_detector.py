@@ -86,6 +86,16 @@ class BehavioralAnomalyDetector:
         self.anomalies.extend(self._detect_delegatecall_risks(contract_code))
         self.anomalies.extend(self._detect_unchecked_return_values(contract_code))
         self.anomalies.extend(self._detect_denial_of_service_patterns(contract_code))
+        
+        # NEW POWERFUL ANOMALY DETECTORS
+        self.anomalies.extend(self._detect_magic_number_anomalies(contract_code))
+        self.anomalies.extend(self._detect_suspicious_mathematical_patterns(contract_code))
+        self.anomalies.extend(self._detect_hidden_admin_functions(contract_code))
+        self.anomalies.extend(self._detect_unusual_token_transfer_patterns(contract_code))
+        self.anomalies.extend(self._detect_centralization_risks(contract_code))
+        self.anomalies.extend(self._detect_upgrade_mechanism_flaws(contract_code))
+        self.anomalies.extend(self._detect_oracle_dependency_risks(contract_code))
+        self.anomalies.extend(self._detect_flash_loan_vulnerable_patterns(contract_code))
 
         return self.anomalies
 
@@ -552,6 +562,403 @@ class BehavioralAnomalyDetector:
                             remediation="Use pull payment pattern or handle failures gracefully"
                         ))
 
+        return anomalies
+
+    def _detect_magic_number_anomalies(self, contract_code: str) -> List[Anomaly]:
+        """
+        NEW: Detect suspicious magic numbers that might hide exploits
+        """
+        anomalies = []
+        
+        # Find hardcoded numbers that look suspicious
+        magic_number_pattern = r'(?:=|>|<|>=|<=)\s*(\d{10,}|\d+e\d+)'
+        matches = list(re.finditer(magic_number_pattern, contract_code))
+        
+        suspicious_patterns = [
+            (r'require.*>.*1000000000', 'Suspiciously high threshold'),
+            (r'msg\.value.*<.*1\b', 'Suspiciously low payment requirement'),
+            (r'block\.timestamp.*\d{10,}', 'Hardcoded timestamp (possible backdoor)'),
+            (r'balanceOf.*==.*0(?!\w)', 'Exact zero check (front-runnable)'),
+        ]
+        
+        for pattern, desc in suspicious_patterns:
+            if re.search(pattern, contract_code):
+                anomalies.append(Anomaly(
+                    anomaly_type=AnomalyType.SUSPICIOUS_COMPLEXITY,
+                    name="suspicious_magic_number",
+                    description=f"Found suspicious hardcoded value: {desc}",
+                    severity="medium",
+                    confidence=0.65,
+                    location="contract_wide",
+                    evidence={"pattern": pattern},
+                    potential_exploit="Magic numbers may hide time-bombs or backdoor conditions",
+                    remediation="Use named constants and document all hardcoded values"
+                ))
+        
+        return anomalies
+
+    def _detect_suspicious_mathematical_patterns(self, contract_code: str) -> List[Anomaly]:
+        """
+        NEW: Detect mathematical patterns that often contain bugs
+        """
+        anomalies = []
+        
+        # Division before multiplication (precision loss)
+        div_mult_pattern = r'/[^/]+\*'
+        if re.search(div_mult_pattern, contract_code):
+            anomalies.append(Anomaly(
+                anomaly_type=AnomalyType.ANTI_PATTERN,
+                name="division_before_multiplication",
+                description="Division before multiplication detected - causes precision loss",
+                severity="high",
+                confidence=0.80,
+                location="mathematical_operations",
+                evidence={"pattern": "x / y * z"},
+                potential_exploit="Attackers can exploit rounding errors to extract value",
+                remediation="Always multiply before dividing: (x * z) / y"
+            ))
+        
+        # Subtraction without underflow check
+        unchecked_sub_pattern = r'unchecked\s*\{[^}]*-[^}]*\}'
+        if re.search(unchecked_sub_pattern, contract_code):
+            anomalies.append(Anomaly(
+                anomaly_type=AnomalyType.SUSPICIOUS_COMPLEXITY,
+                name="unchecked_arithmetic",
+                description="Unchecked subtraction detected - potential underflow",
+                severity="high",
+                confidence=0.75,
+                location="unchecked_blocks",
+                evidence={"found": "unchecked subtraction"},
+                potential_exploit="Integer underflow can bypass balance checks",
+                remediation="Only use unchecked for proven safe operations"
+            ))
+        
+        # Modulo with power of 2 (should use bitwise AND)
+        inefficient_modulo = r'%\s*(?:2|4|8|16|32|64|128|256)\b'
+        if re.search(inefficient_modulo, contract_code):
+            anomalies.append(Anomaly(
+                anomaly_type=AnomalyType.ANTI_PATTERN,
+                name="inefficient_modulo",
+                description="Modulo with power of 2 detected - use bitwise AND for efficiency",
+                severity="low",
+                confidence=0.90,
+                location="mathematical_operations",
+                evidence={"pattern": "x % 2"},
+                potential_exploit="Not a security issue but indicates possible amateur code",
+                remediation="Use bitwise AND: x & 1 instead of x % 2"
+            ))
+        
+        return anomalies
+
+    def _detect_hidden_admin_functions(self, contract_code: str) -> List[Anomaly]:
+        """
+        NEW: Detect hidden administrative functions that could be backdoors
+        """
+        anomalies = []
+        
+        # Look for functions with powerful capabilities but non-obvious names
+        powerful_operations = [r'selfdestruct', r'delegatecall', r'suicide', r'kill']
+        suspicious_names = [r'withdraw(?!al)', r'drain', r'sweep', r'rescue', r'recover', r'emergency']
+        
+        for op in powerful_operations:
+            op_pattern = rf'function\s+(\w+).*{op}'
+            matches = list(re.finditer(op_pattern, contract_code, re.DOTALL | re.IGNORECASE))
+            
+            for match in matches:
+                func_name = match.group(1)
+                func_context = contract_code[match.start():match.start()+500]
+                
+                # Check if function has weak access control
+                has_modifier = bool(re.search(r'onlyOwner|require.*msg\.sender', func_context))
+                
+                if not has_modifier or any(re.search(name, func_name, re.IGNORECASE) for name in suspicious_names):
+                    anomalies.append(Anomaly(
+                        anomaly_type=AnomalyType.SUSPICIOUS_COMPLEXITY,
+                        name="potential_backdoor_function",
+                        description=f"Function '{func_name}' has dangerous capabilities with suspicious naming",
+                        severity="critical",
+                        confidence=0.70,
+                        location=func_name,
+                        evidence={"operation": op, "has_access_control": has_modifier},
+                        potential_exploit="Hidden admin function could be backdoor for rug pull",
+                        remediation="Ensure strong access control and clear function naming"
+                    ))
+        
+        return anomalies
+
+    def _detect_unusual_token_transfer_patterns(self, contract_code: str) -> List[Anomaly]:
+        """
+        NEW: Detect unusual patterns in token transfers that might indicate issues
+        """
+        anomalies = []
+        
+        # Transfer to hardcoded address (potential honeypot)
+        hardcoded_transfer = r'transfer\s*\(\s*0x[0-9a-fA-F]{40}\s*,'
+        if re.search(hardcoded_transfer, contract_code):
+            anomalies.append(Anomaly(
+                anomaly_type=AnomalyType.SUSPICIOUS_COMPLEXITY,
+                name="hardcoded_transfer_address",
+                description="Token transfer to hardcoded address detected",
+                severity="high",
+                confidence=0.85,
+                location="transfer_operations",
+                evidence={"pattern": "transfer to hardcoded address"},
+                potential_exploit="Funds could be siphoned to developer wallet",
+                remediation="Use configurable addresses, not hardcoded"
+            ))
+        
+        # Transfer before balance check (reentrancy risk)
+        transfer_before_check = r'transfer.*require.*balance'
+        if re.search(transfer_before_check, contract_code, re.DOTALL):
+            anomalies.append(Anomaly(
+                anomaly_type=AnomalyType.ANTI_PATTERN,
+                name="transfer_before_balance_check",
+                description="Token transfer before balance validation",
+                severity="high",
+                confidence=0.75,
+                location="transfer_operations",
+                evidence={"pattern": "transfer before require"},
+                potential_exploit="Violates checks-effects-interactions pattern",
+                remediation="Always check balances before transfers"
+            ))
+        
+        # Multiple transfers in single function (complex flow)
+        func_pattern = r'function\s+(\w+)'
+        for func_match in re.finditer(func_pattern, contract_code):
+            func_start = func_match.start()
+            func_end = self._find_function_end(contract_code, func_match.end())
+            func_body = contract_code[func_start:func_end]
+            func_name = func_match.group(1)
+            
+            transfer_count = len(re.findall(r'\.transfer\(', func_body))
+            
+            if transfer_count >= 3:
+                anomalies.append(Anomaly(
+                    anomaly_type=AnomalyType.UNUSUAL_PATTERN,
+                    name="complex_transfer_flow",
+                    description=f"Function '{func_name}' contains {transfer_count} transfers",
+                    severity="medium",
+                    confidence=0.70,
+                    location=func_name,
+                    evidence={"transfer_count": transfer_count},
+                    potential_exploit="Complex transfer logic harder to audit, may hide issues",
+                    remediation="Simplify transfer logic or add extensive documentation"
+                ))
+        
+        return anomalies
+
+    def _detect_centralization_risks(self, contract_code: str) -> List[Anomaly]:
+        """
+        NEW: Detect excessive centralization that creates risk
+        """
+        anomalies = []
+        
+        # Count owner-only functions
+        owner_funcs = len(re.findall(r'onlyOwner|require.*owner.*msg\.sender', contract_code))
+        total_funcs = len(re.findall(r'function\s+\w+', contract_code))
+        
+        if total_funcs > 0:
+            centralization_ratio = owner_funcs / total_funcs
+            
+            if centralization_ratio > 0.3:  # More than 30% owner-only
+                anomalies.append(Anomaly(
+                    anomaly_type=AnomalyType.SUSPICIOUS_COMPLEXITY,
+                    name="excessive_centralization",
+                    description=f"{owner_funcs}/{total_funcs} functions require owner privileges ({centralization_ratio*100:.1f}%)",
+                    severity="medium",
+                    confidence=0.90,
+                    location="access_control",
+                    evidence={"owner_functions": owner_funcs, "total_functions": total_funcs},
+                    potential_exploit="Owner has excessive control - rug pull risk",
+                    remediation="Implement timelock, multisig, or decentralized governance"
+                ))
+        
+        # Check for pause mechanism without timelock
+        has_pause = bool(re.search(r'function\s+pause\s*\(|_pause\(|whenNotPaused', contract_code))
+        has_timelock = bool(re.search(r'timelock|delay|Timelock', contract_code, re.IGNORECASE))
+        
+        if has_pause and not has_timelock:
+            anomalies.append(Anomaly(
+                anomaly_type=AnomalyType.SUSPICIOUS_COMPLEXITY,
+                name="instant_pause_mechanism",
+                description="Contract can be paused instantly by owner",
+                severity="medium",
+                confidence=0.85,
+                location="pause_mechanism",
+                evidence={"has_pause": True, "has_timelock": False},
+                potential_exploit="Owner can freeze user funds instantly",
+                remediation="Add timelock delay before pause takes effect"
+            ))
+        
+        return anomalies
+
+    def _detect_upgrade_mechanism_flaws(self, contract_code: str) -> List[Anomaly]:
+        """
+        NEW: Detect flaws in upgrade mechanisms
+        """
+        anomalies = []
+        
+        # Check for upgradeable contract without proper safeguards
+        is_upgradeable = bool(re.search(r'delegatecall|upgrade|implementation|Proxy', contract_code, re.IGNORECASE))
+        
+        if is_upgradeable:
+            has_storage_gap = bool(re.search(r'__gap\[|_gap\[', contract_code))
+            has_initializer = bool(re.search(r'initializer|Initializable', contract_code))
+            has_upgrade_timelock = bool(re.search(r'upgradeDelay|upgradeTimelock', contract_code))
+            
+            if not has_storage_gap:
+                anomalies.append(Anomaly(
+                    anomaly_type=AnomalyType.ANTI_PATTERN,
+                    name="upgradeable_without_storage_gap",
+                    description="Upgradeable contract missing storage gap",
+                    severity="critical",
+                    confidence=0.85,
+                    location="contract_storage",
+                    evidence={"is_upgradeable": True, "has_storage_gap": False},
+                    potential_exploit="Storage collision can corrupt state on upgrade",
+                    remediation="Add uint256[50] private __gap; to reserve storage slots"
+                ))
+            
+            if not has_upgrade_timelock:
+                anomalies.append(Anomaly(
+                    anomaly_type=AnomalyType.SUSPICIOUS_COMPLEXITY,
+                    name="instant_upgrade_capability",
+                    description="Contract can be upgraded instantly without timelock",
+                    severity="high",
+                    confidence=0.80,
+                    location="upgrade_mechanism",
+                    evidence={"is_upgradeable": True, "has_timelock": False},
+                    potential_exploit="Malicious upgrade can be deployed instantly",
+                    remediation="Implement timelock (e.g., 48 hours) before upgrades"
+                ))
+        
+        return anomalies
+
+    def _detect_oracle_dependency_risks(self, contract_code: str) -> List[Anomaly]:
+        """
+        NEW: Detect risky oracle usage patterns
+        """
+        anomalies = []
+        
+        # Check for oracle usage
+        oracle_patterns = [r'getPrice', r'latestAnswer', r'consult', r'oracle', r'Chainlink', r'AggregatorV3']
+        has_oracle = any(re.search(pattern, contract_code, re.IGNORECASE) for pattern in oracle_patterns)
+        
+        if has_oracle:
+            # Check for single oracle (no redundancy)
+            oracle_count = sum(1 for pattern in oracle_patterns if re.search(pattern, contract_code, re.IGNORECASE))
+            
+            if oracle_count == 1:
+                anomalies.append(Anomaly(
+                    anomaly_type=AnomalyType.SUSPICIOUS_COMPLEXITY,
+                    name="single_oracle_dependency",
+                    description="Contract relies on single oracle without fallback",
+                    severity="high",
+                    confidence=0.80,
+                    location="oracle_integration",
+                    evidence={"oracle_count": 1},
+                    potential_exploit="Oracle failure or manipulation can brick protocol",
+                    remediation="Use multiple oracles with fallback mechanism"
+                ))
+            
+            # Check for freshness validation
+            has_freshness_check = bool(re.search(r'updatedAt|timestamp.*require|stale', contract_code, re.IGNORECASE))
+            
+            if not has_freshness_check:
+                anomalies.append(Anomaly(
+                    anomaly_type=AnomalyType.ANTI_PATTERN,
+                    name="no_oracle_freshness_check",
+                    description="Oracle price used without freshness validation",
+                    severity="high",
+                    confidence=0.85,
+                    location="oracle_integration",
+                    evidence={"has_freshness_check": False},
+                    potential_exploit="Stale prices can be exploited for arbitrage",
+                    remediation="Validate: require(block.timestamp - updatedAt < MAX_DELAY)"
+                ))
+            
+            # Check for circuit breaker
+            has_circuit_breaker = bool(re.search(r'circuit.*break|emergency.*stop|price.*bound|min.*price.*max', contract_code, re.IGNORECASE))
+            
+            if not has_circuit_breaker:
+                anomalies.append(Anomaly(
+                    anomaly_type=AnomalyType.SUSPICIOUS_COMPLEXITY,
+                    name="no_oracle_circuit_breaker",
+                    description="No circuit breaker for extreme oracle price changes",
+                    severity="medium",
+                    confidence=0.75,
+                    location="oracle_integration",
+                    evidence={"has_circuit_breaker": False},
+                    potential_exploit="Extreme price movements can cause protocol failure",
+                    remediation="Implement bounds checking and pause on extreme deviations"
+                ))
+        
+        return anomalies
+
+    def _detect_flash_loan_vulnerable_patterns(self, contract_code: str) -> List[Anomaly]:
+        """
+        NEW: Detect patterns vulnerable to flash loan attacks
+        """
+        anomalies = []
+        
+        # Check for balance-based logic without reentrancy guard
+        balance_logic = r'balanceOf.*if|if.*balanceOf'
+        has_balance_logic = bool(re.search(balance_logic, contract_code))
+        has_reentrancy_guard = bool(re.search(r'nonReentrant|ReentrancyGuard|locked', contract_code))
+        
+        if has_balance_logic and not has_reentrancy_guard:
+            anomalies.append(Anomaly(
+                anomaly_type=AnomalyType.ANTI_PATTERN,
+                name="balance_based_logic_without_guard",
+                description="Balance-based conditionals without reentrancy protection",
+                severity="high",
+                confidence=0.75,
+                location="balance_checks",
+                evidence={"has_balance_logic": True, "has_guard": False},
+                potential_exploit="Flash loan can manipulate balance checks",
+                remediation="Add reentrancy guard or use internal accounting"
+            ))
+        
+        # Check for price calculations using reserves
+        reserve_price_calc = r'reserve.*\/.*reserve|getReserves'
+        has_reserve_pricing = bool(re.search(reserve_price_calc, contract_code, re.IGNORECASE))
+        
+        if has_reserve_pricing:
+            has_twap = bool(re.search(r'TWAP|timeWeighted|observe', contract_code, re.IGNORECASE))
+            
+            if not has_twap:
+                anomalies.append(Anomaly(
+                    anomaly_type=AnomalyType.ANTI_PATTERN,
+                    name="spot_price_without_twap",
+                    description="Uses spot price from reserves without TWAP",
+                    severity="critical",
+                    confidence=0.90,
+                    location="price_calculations",
+                    evidence={"uses_reserves": True, "has_twap": False},
+                    potential_exploit="Flash loan can manipulate spot price for profit",
+                    remediation="Use TWAP oracle or Chainlink price feed"
+                ))
+        
+        # Check for single-block price updates
+        price_update_pattern = r'updatePrice|setPrice|_update'
+        block_check_pattern = r'block\.number.*>|lastUpdate.*block'
+        
+        has_price_update = bool(re.search(price_update_pattern, contract_code, re.IGNORECASE))
+        has_block_check = bool(re.search(block_check_pattern, contract_code))
+        
+        if has_price_update and not has_block_check:
+            anomalies.append(Anomaly(
+                anomaly_type=AnomalyType.SUSPICIOUS_COMPLEXITY,
+                name="single_block_price_manipulation",
+                description="Price can be updated multiple times per block",
+                severity="high",
+                confidence=0.70,
+                location="price_updates",
+                evidence={"has_price_update": True, "has_block_check": False},
+                potential_exploit="Flash loan can manipulate price within single transaction",
+                remediation="Limit price updates to once per block"
+            ))
+        
         return anomalies
 
 
