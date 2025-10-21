@@ -1,0 +1,67 @@
+======================================================================
+ ADVANCED WEB3 BUG HUNTER - COMPREHENSIVE ANALYSIS
+======================================================================
+Contract: examples/VulnerableVault.sol
+Timestamp: 2025-10-21T01:53:26.658694
+
+
+[1/6] Running Novel Pattern Detection...
+----------------------------------------------------------------------
+Found 14 novel vulnerability patterns
+
+Top Findings:
+  1. [MEDIUM] just_in_time_liquidity_attack
+     Function 'deposit' allows instant liquidity addition/removal
+  2. [HIGH] stale_oracle_price_exploitation
+     Oracle price usage without freshness validation
+  3. [CRITICAL] erc4626_inflation_attack
+     Vault share calculation CRITICALLY vulnerable to inflation attack. Only 0/4 protections found.
+  4. [HIGH] cross_function_reentrancy
+     Function 'deposit' may be vulnerable to cross-function reentrancy
+  5. [HIGH] cross_function_reentrancy
+     Function 'withdraw' may be vulnerable to cross-function reentrancy
+
+[2/6] Running Behavioral Anomaly Detection...
+----------------------------------------------------------------------
+Found 14 behavioral anomalies
+
+Top Findings:
+  1. [HIGH] multiple_external_calls_no_guard
+     Function 'deposit' makes 2 external calls without reentrancy guard
+  2. [HIGH] multiple_external_calls_no_guard
+     Function 'withdraw' makes 5 external calls without reentrancy guard
+  3. [HIGH] multiple_external_calls_no_guard
+     Function 'emergencyWithdraw' makes 2 external calls without reentrancy guard
+  4. [HIGH] multiple_external_calls_no_guard
+     Function 'transfer' makes 3 external calls without reentrancy guard
+  5. [CRITICAL] potential_backdoor
+     Emergency function without access control
+
+[3/6] Running Symbolic Execution Analysis...
+----------------------------------------------------------------------
+Symbolic execution completed
+
+[4/6] Running LLM Multi-Agent Reasoning...
+----------------------------------------------------------------------
+LLM analysis completed with 6 reasoning modes
+
+[5/6] Skipping fuzzing (disabled in config)
+
+[6/6] Generating Comprehensive Report...
+----------------------------------------------------------------------
+
+======================================================================
+ COMPREHENSIVE ANALYSIS REPORT
+======================================================================
+
+Total Findings: 28
+  Critical: 7
+  High: 17
+
+Overall Risk Level: CRITICAL
+
+Detailed report saved to: bug_hunter_report.json
+
+======================================================================
+ ANALYSIS COMPLETE
+======================================================================
