@@ -1,0 +1,83 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Environment variables
+.env
+*.env
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
+# Fuzzing output
+corpus/
+crashes/
+results/
+*.corpus
+*.crash
+
+# Reports and logs
+*.log
+*_report.json
+bug_hunter_report.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.orig
+
+# Slither cache
+.slither/
+slither.db.json
+
+# Node modules (if using JS tools)
+node_modules/
+
+# Compiled contracts
+*.bin
+*.abi
+out/
+cache/
+
+# Patterns directory (learned patterns - may want to version control)
+patterns/*.json
+!patterns/.gitkeep

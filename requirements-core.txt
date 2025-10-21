@@ -1,0 +1,14 @@
+# Core requirements - NO conflicts
+# Install these first for the advanced analysis modules
+
+z3-solver>=4.8.8.0,<4.12.2.0
+openai>=1.0.0
+anthropic>=0.18.0
+
+# Development
+pytest>=7.4.0
+black>=23.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+rich>=13.0.0

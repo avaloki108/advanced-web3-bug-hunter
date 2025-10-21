@@ -1,0 +1,23 @@
+# Core dependencies
+z3-solver>=4.8.8.0,<4.12.2.0  # Symbolic execution (compatible with mythril)
+openai>=1.0.0  # LLM integration
+anthropic>=0.18.0  # Claude API (optional)
+
+# Static analysis (install separately to avoid conflicts)
+# slither-analyzer==0.10.0  # Run: pip install slither-analyzer
+# mythril==0.24.3  # Run: pip install mythril (has z3 conflict)
+# crytic-compile==0.3.5  # Installed with slither
+
+# Fuzzing tools (install separately)
+# echidna - Install from: https://github.com/crytic/echidna
+# foundry - Install from: https://getfoundry.sh/
+
+# Development dependencies
+pytest==7.4.3
+pytest-cov==4.1.0
+black==23.12.1
+mypy==1.8.0
+
+# Utilities
+python-dotenv==1.0.0
+rich==13.7.0  # Pretty terminal output

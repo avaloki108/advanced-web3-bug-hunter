@@ -1,0 +1,221 @@
+#!/usr/bin/env python3
+"""
+Web3 Bug Hunter - Simple CLI
+Just run: ./hunt Contract.sol or ./hunt directory/
+
+Grok AI is pre-configured and ready to use!
+"""
+
+import sys
+import os
+import glob
+from pathlib import Path
+
+# Add current directory to path
+sys.path.insert(0, str(Path(__file__).parent))
+
+# Import configuration
+from config import config
+
+# Import main hunter
+from advanced_bug_hunter import AdvancedWeb3BugHunter
+
+
+def print_banner():
+    """Print welcome banner"""
+    print()
+    print("╔══════════════════════════════════════════════════════════════╗")
+    print("║                                                              ║")
+    print("║         🎯 Advanced Web3 Bug Hunter with Grok AI 🎯         ║")
+    print("║                                                              ║")
+    print("╚══════════════════════════════════════════════════════════════╝")
+    print()
+
+
+def print_help():
+    """Print usage help"""
+    print("Usage:")
+    print("  ./hunt <contract.sol>                  # Analyze single contract")
+    print("  ./hunt <directory/>                    # Analyze all contracts in directory")
+    print("  ./hunt <path> --quick                  # Fast scan (no LLM)")
+    print("  ./hunt <path> --no-fuzzing             # Skip fuzzing (faster)")
+    print()
+    print("Examples:")
+    print("  ./hunt examples/VulnerableVault.sol    # Single contract")
+    print("  ./hunt examples/                       # All contracts in examples/")
+    print("  ./hunt MyContract.sol --quick          # Quick scan")
+    print("  ./hunt contracts/ --no-fuzzing         # Directory without fuzzing")
+    print()
+    print("Options:")
+    print("  --quick        Skip LLM and fuzzing (fastest)")
+    print("  --no-llm       Skip LLM analysis")
+    print("  --no-fuzzing   Skip fuzzing")
+    print("  --help, -h     Show this help")
+    print()
+    print("Configuration:")
+    print(f"  LLM Provider: {config.llm_provider or 'disabled'}")
+    print(f"  API Key: {'✓ Configured' if config.get_llm_key() else '✗ Missing'}")
+    print()
+
+
+def find_contracts(path):
+    """Find all Solidity contracts in a directory"""
+    contracts = []
+    path_obj = Path(path)
+
+    if path_obj.is_file():
+        if path_obj.suffix == '.sol':
+            return [str(path_obj)]
+        else:
+            print(f"Warning: {path} is not a Solidity file (.sol)")
+            return []
+
+    if path_obj.is_dir():
+        # Find all .sol files recursively
+        contracts = list(path_obj.rglob('*.sol'))
+        return [str(c) for c in contracts]
+
+    return []
+
+
+def main():
+    """Main entry point"""
+
+    # Parse simple arguments
+    args = sys.argv[1:]
+
+    # Show help
+    if not args or '--help' in args or '-h' in args:
+        print_banner()
+        print_help()
+        return
+
+    # Extract contract path
+    target_path = None
+    for arg in args:
+        if not arg.startswith('--') and not arg.startswith('-'):
+            target_path = arg
+            break
+
+    if not target_path:
+        print("Error: Please specify a contract file or directory")
+        print("Usage: ./hunt <contract.sol> or ./hunt <directory/>")
+        return
+
+    # Expand user home directory
+    target_path = os.path.expanduser(target_path)
+
+    # Check if path exists
+    if not Path(target_path).exists():
+        print(f"Error: Path not found: {target_path}")
+        return
+
+    # Find all contracts
+    contracts = find_contracts(target_path)
+
+    if not contracts:
+        print(f"Error: No Solidity contracts found in {target_path}")
+        return
+
+    # Parse options
+    quick_mode = '--quick' in args
+    no_llm = '--no-llm' in args or quick_mode
+    no_fuzzing = '--no-fuzzing' in args or quick_mode
+
+    # Show banner
+    print_banner()
+
+    # Show what we're analyzing
+    if len(contracts) == 1:
+        print(f"📁 Target: {contracts[0]}")
+    else:
+        print(f"📁 Target: {target_path}")
+        print(f"📄 Found {len(contracts)} contracts")
+
+    print(f"🤖 LLM: {config.llm_provider.upper() if (not no_llm and config.use_llm) else 'Disabled'}")
+    print(f"🧪 Fuzzing: {'Enabled' if (not no_fuzzing and config.use_fuzzing) else 'Disabled'}")
+    print()
+
+    # Process each contract
+    total_findings = 0
+    successful_scans = 0
+    failed_scans = []
+
+    for i, contract_path in enumerate(contracts, 1):
+        try:
+            # Build config
+            output_name = Path(contract_path).stem + '_report.json'
+            hunt_config = {
+                'llm_provider': config.llm_provider,
+                'llm_api_key': config.get_llm_key() if not no_llm else None,
+                'use_llm': not no_llm and config.use_llm,
+                'use_fuzzing': not no_fuzzing and config.use_fuzzing,
+                'output_file': output_name
+            }
+
+            # Show progress for multiple contracts
+            if len(contracts) > 1:
+                print()
+                print("="*70)
+                print(f" [{i}/{len(contracts)}] Analyzing: {Path(contract_path).name}")
+                print("="*70)
+
+            print(f"📄 Contract: {contract_path}")
+
+            # Run analysis
+            hunter = AdvancedWeb3BugHunter(contract_path, hunt_config)
+            results = hunter.run_comprehensive_analysis()
+
+            # Count findings
+            findings = results['analysis_results'].get('novel_patterns', {}).get('total_patterns', 0) + \
+                      results['analysis_results'].get('anomalies', {}).get('total_anomalies', 0)
+
+            total_findings += findings
+            successful_scans += 1
+
+            # Show results
+            print()
+            print(f"  ✅ Complete! Found {findings} issues")
+            print(f"  📄 Report: {output_name}")
+
+            if 'novel_patterns' in results['analysis_results']:
+                patterns = results['analysis_results']['novel_patterns']
+                critical = patterns.get('critical', 0)
+                high = patterns.get('high', 0)
+                if critical > 0 or high > 0:
+                    print(f"  ⚠️  Critical: {critical}, High: {high}")
+
+        except KeyboardInterrupt:
+            print("\n\n⚠️  Analysis interrupted by user")
+            break
+        except Exception as e:
+            print(f"\n  ❌ Error: {str(e)}")
+            failed_scans.append((contract_path, str(e)))
+            continue
+
+    # Final summary
+    print()
+    print("="*70)
+    print(" 🎯 SCAN SUMMARY")
+    print("="*70)
+    print(f"  Contracts scanned: {successful_scans}/{len(contracts)}")
+    print(f"  Total findings: {total_findings}")
+
+    if failed_scans:
+        print(f"  Failed scans: {len(failed_scans)}")
+        print()
+        print("Failed contracts:")
+        for contract, error in failed_scans:
+            print(f"  - {Path(contract).name}: {error[:50]}")
+
+    print()
+    print("View reports:")
+    if len(contracts) == 1:
+        print(f"  cat {Path(contracts[0]).stem}_report.json | python -m json.tool")
+    else:
+        print(f"  ls -1 *_report.json")
+    print()
+
+
+if __name__ == "__main__":
+    main()

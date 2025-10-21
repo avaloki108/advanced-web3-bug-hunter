@@ -1,0 +1,14 @@
+# Additional security tools (optional)
+# These have dependency conflicts with each other
+# Install ONLY the ones you need
+
+# Option 1: Slither (recommended for static analysis)
+# pip install slither-analyzer
+
+# Option 2: Mythril (alternative symbolic execution)
+# pip install mythril
+# NOTE: Cannot install both mythril and latest z3-solver
+
+# Option 3: Both (use separate virtual environments)
+# venv1: pip install -r requirements-core.txt && pip install slither-analyzer
+# venv2: pip install mythril
