@@ -18,9 +18,18 @@ from advanced.behavioral_anomaly_detector import BehavioralAnomalyDetector
 from advanced.llm_reasoning_engine import AdvancedLLMReasoner
 from advanced.enhanced_fuzzing_orchestrator import EnhancedFuzzingOrchestrator, FuzzingConfig, FuzzingStrategy
 
-# Import existing modules
-from llm.llm_integration import LLMVulnerabilityAnalyzer
-from scripts.cross_contract_tracker import CrossContractLogicTracker
+# Import existing modules (optional dependencies)
+try:
+    from llm.llm_integration import LLMVulnerabilityAnalyzer
+    HAS_LLM = True
+except ImportError:
+    HAS_LLM = False
+    
+try:
+    from scripts.cross_contract_tracker import CrossContractLogicTracker
+    HAS_SLITHER = True
+except ImportError:
+    HAS_SLITHER = False
 
 
 class AdvancedWeb3BugHunter:
@@ -102,24 +111,28 @@ class AdvancedWeb3BugHunter:
         print(f"Symbolic execution completed")
 
         # Phase 4: LLM Multi-Agent Reasoning
-        if self.config.get('use_llm', True):
+        if self.config.get('use_llm', True) and HAS_LLM:
             print("\n[4/6] Running LLM Multi-Agent Reasoning...")
             print("-" * 70)
             static_results = {
                 "patterns": [self._serialize_pattern(p) for p in patterns[:5]],
                 "anomalies": [self._serialize_anomaly(a) for a in anomalies[:5]]
             }
-            llm_results = self.llm_reasoner.analyze_contract_multi_agent(
-                contract_code,
-                static_results,
-                contract_type=self._detect_contract_type(contract_code)
-            )
-            self.results["analysis_results"]["llm_reasoning"] = [
-                self._serialize_llm_result(r) for r in llm_results
-            ]
-            print(f"LLM analysis completed with {len(llm_results)} reasoning modes")
+            try:
+                llm_results = self.llm_reasoner.analyze_contract_multi_agent(
+                    contract_code,
+                    static_results,
+                    contract_type=self._detect_contract_type(contract_code)
+                )
+                self.results["analysis_results"]["llm_reasoning"] = [
+                    self._serialize_llm_result(r) for r in llm_results
+                ]
+                print(f"LLM analysis completed with {len(llm_results)} reasoning modes")
+            except Exception as e:
+                print(f"  ⚠️  LLM analysis failed: {str(e)}")
+                self.results["analysis_results"]["llm_reasoning"] = {"error": str(e)}
         else:
-            print("\n[4/6] Skipping LLM analysis (disabled in config)")
+            print("\n[4/6] Skipping LLM analysis (disabled or unavailable)")
 
         # Phase 5: Enhanced Fuzzing
         if self.config.get('use_fuzzing', True):
