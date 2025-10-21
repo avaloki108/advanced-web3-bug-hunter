@@ -21,9 +21,18 @@ from advanced.persistent_learning import PersistentLearningDB, get_learning_db
 from advanced.benchmark_comparison import BenchmarkSystem
 from advanced.rare_vulnerability_detectors import RareVulnerabilityDetector
 
-# Import existing modules
-from llm.llm_integration import LLMVulnerabilityAnalyzer
-# from scripts.cross_contract_tracker import CrossContractLogicTracker  # Optional - requires slither
+# Import existing modules (optional dependencies)
+try:
+    from llm.llm_integration import LLMVulnerabilityAnalyzer
+    HAS_LLM = True
+except ImportError:
+    HAS_LLM = False
+    
+try:
+    from scripts.cross_contract_tracker import CrossContractLogicTracker
+    HAS_SLITHER = True
+except ImportError:
+    HAS_SLITHER = False
 
 
 class AdvancedWeb3BugHunter:
@@ -143,7 +152,7 @@ class AdvancedWeb3BugHunter:
 
         # Phase 4: LLM Multi-Agent Reasoning (WITH LEARNING!)
         llm_insights = []
-        if self.config.get('use_llm', True):
+        if self.config.get('use_llm', True) and HAS_LLM:
             print("\n[4/7] Running LLM Multi-Agent Reasoning (Enhanced with Learning)...")
             print("-" * 70)
             
@@ -156,24 +165,31 @@ class AdvancedWeb3BugHunter:
                 "anomalies": [self._serialize_anomaly(a) for a in anomalies[:5]],
                 "learned_patterns": self.learning_db.get_learned_patterns_for_analysis()[:5]
             }
-            llm_results = self.llm_reasoner.analyze_contract_multi_agent(
-                contract_code,
-                static_results,
-                contract_type=self._detect_contract_type(contract_code)
-            )
-            self.results["analysis_results"]["llm_reasoning"] = [
-                self._serialize_llm_result(r) for r in llm_results
-            ]
-            
-            # Extract insights for learning
-            for result in llm_results:
-                if hasattr(result, 'findings'):
-                    llm_insights.extend([str(f) for f in result.findings])
+            try:
+                llm_results = self.llm_reasoner.analyze_contract_multi_agent(
+                    contract_code,
+                    static_results,
+                    contract_type=self._detect_contract_type(contract_code)
+                )
+                self.results["analysis_results"]["llm_reasoning"] = [
+                    self._serialize_llm_result(r) for r in llm_results
+                ]
+                
+                # Extract insights for learning
+                for result in llm_results:
+                    if hasattr(result, 'findings'):
+                        llm_insights.extend([str(f) for f in result.findings])
+            except Exception as e:
+                print(f"  ⚠️  LLM analysis failed: {str(e)}")
+                self.results["analysis_results"]["llm_reasoning"] = {"error": str(e)}
                     
-            print(f"LLM analysis completed with {len(llm_results)} reasoning modes")
-            print(f"Extracted {len(llm_insights)} insights for learning")
+            
+                print(f"LLM analysis completed with {len(llm_results)} reasoning modes")
+                print(f"Extracted {len(llm_insights)} insights for learning")
+            except:
+                pass  # Error already handled above
         else:
-            print("\n[4/7] Skipping LLM analysis (disabled in config)")
+            print("\n[4/7] Skipping LLM analysis (disabled or unavailable)")
 
         # Phase 5: Enhanced Fuzzing
         if self.config.get('use_fuzzing', True):
