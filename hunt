@@ -11,6 +11,25 @@ import os
 import glob
 from pathlib import Path
 
+
+# Check if virtual environment is activated
+def check_venv():
+    """Check if virtual environment is activated and warn if not"""
+    in_venv = hasattr(sys, "real_prefix") or (
+        hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix
+    )
+
+    if not in_venv and os.path.exists(".venv"):
+        print("⚠️  Warning: Virtual environment not activated!")
+        print("   Run: source .venv/bin/activate")
+        print()
+        response = input("Continue anyway? [y/N] ")
+        if not response.lower().startswith("y"):
+            print("Exiting. Please activate the virtual environment first.")
+            sys.exit(1)
+        print()
+
+
 # Add current directory to path
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -36,7 +55,9 @@ def print_help():
     """Print usage help"""
     print("Usage:")
     print("  ./hunt <contract.sol>                  # Analyze single contract")
-    print("  ./hunt <directory/>                    # Analyze all contracts in directory")
+    print(
+        "  ./hunt <directory/>                    # Analyze all contracts in directory"
+    )
     print("  ./hunt <path> --quick                  # Fast scan (no LLM)")
     print("  ./hunt <path> --no-fuzzing             # Skip fuzzing (faster)")
     print()
@@ -52,6 +73,10 @@ def print_help():
     print("  --no-fuzzing   Skip fuzzing")
     print("  --help, -h     Show this help")
     print()
+    print("Setup:")
+    print("  source .venv/bin/activate              # Activate virtual environment")
+    print("  ./setup.sh                             # Run initial setup with uv")
+    print()
     print("Configuration:")
     print(f"  LLM Provider: {config.llm_provider or 'disabled'}")
     print(f"  API Key: {'✓ Configured' if config.get_llm_key() else '✗ Missing'}")
@@ -64,7 +89,7 @@ def find_contracts(path):
     path_obj = Path(path)
 
     if path_obj.is_file():
-        if path_obj.suffix == '.sol':
+        if path_obj.suffix == ".sol":
             return [str(path_obj)]
         else:
             print(f"Warning: {path} is not a Solidity file (.sol)")
@@ -72,7 +97,7 @@ def find_contracts(path):
 
     if path_obj.is_dir():
         # Find all .sol files recursively
-        contracts = list(path_obj.rglob('*.sol'))
+        contracts = list(path_obj.rglob("*.sol"))
         return [str(c) for c in contracts]
 
     return []
@@ -81,11 +106,14 @@ def find_contracts(path):
 def main():
     """Main entry point"""
 
+    # Check virtual environment
+    check_venv()
+
     # Parse simple arguments
     args = sys.argv[1:]
 
     # Show help
-    if not args or '--help' in args or '-h' in args:
+    if not args or "--help" in args or "-h" in args:
         print_banner()
         print_help()
         return
@@ -93,7 +121,7 @@ def main():
     # Extract contract path
     target_path = None
     for arg in args:
-        if not arg.startswith('--') and not arg.startswith('-'):
+        if not arg.startswith("--") and not arg.startswith("-"):
             target_path = arg
             break
 
@@ -118,9 +146,9 @@ def main():
         return
 
     # Parse options
-    quick_mode = '--quick' in args
-    no_llm = '--no-llm' in args or quick_mode
-    no_fuzzing = '--no-fuzzing' in args or quick_mode
+    quick_mode = "--quick" in args
+    no_llm = "--no-llm" in args or quick_mode
+    no_fuzzing = "--no-fuzzing" in args or quick_mode
 
     # Show banner
     print_banner()
@@ -132,8 +160,12 @@ def main():
         print(f"📁 Target: {target_path}")
         print(f"📄 Found {len(contracts)} contracts")
 
-    print(f"🤖 LLM: {config.llm_provider.upper() if (not no_llm and config.use_llm) else 'Disabled'}")
-    print(f"🧪 Fuzzing: {'Enabled' if (not no_fuzzing and config.use_fuzzing) else 'Disabled'}")
+    print(
+        f"🤖 LLM: {config.llm_provider.upper() if (not no_llm and config.use_llm) else 'Disabled'}"
+    )
+    print(
+        f"🧪 Fuzzing: {'Enabled' if (not no_fuzzing and config.use_fuzzing) else 'Disabled'}"
+    )
     print()
 
     # Process each contract
@@ -144,21 +176,21 @@ def main():
     for i, contract_path in enumerate(contracts, 1):
         try:
             # Build config
-            output_name = Path(contract_path).stem + '_report.json'
+            output_name = Path(contract_path).stem + "_report.json"
             hunt_config = {
-                'llm_provider': config.llm_provider,
-                'llm_api_key': config.get_llm_key() if not no_llm else None,
-                'use_llm': not no_llm and config.use_llm,
-                'use_fuzzing': not no_fuzzing and config.use_fuzzing,
-                'output_file': output_name
+                "llm_provider": config.llm_provider,
+                "llm_api_key": config.get_llm_key() if not no_llm else None,
+                "use_llm": not no_llm and config.use_llm,
+                "use_fuzzing": not no_fuzzing and config.use_fuzzing,
+                "output_file": output_name,
             }
 
             # Show progress for multiple contracts
             if len(contracts) > 1:
                 print()
-                print("="*70)
+                print("=" * 70)
                 print(f" [{i}/{len(contracts)}] Analyzing: {Path(contract_path).name}")
-                print("="*70)
+                print("=" * 70)
 
             print(f"📄 Contract: {contract_path}")
 
@@ -167,8 +199,11 @@ def main():
             results = hunter.run_comprehensive_analysis()
 
             # Count findings
-            findings = results['analysis_results'].get('novel_patterns', {}).get('total_patterns', 0) + \
-                      results['analysis_results'].get('anomalies', {}).get('total_anomalies', 0)
+            findings = results["analysis_results"].get("novel_patterns", {}).get(
+                "total_patterns", 0
+            ) + results["analysis_results"].get("anomalies", {}).get(
+                "total_anomalies", 0
+            )
 
             total_findings += findings
             successful_scans += 1
@@ -178,10 +213,10 @@ def main():
             print(f"  ✅ Complete! Found {findings} issues")
             print(f"  📄 Report: {output_name}")
 
-            if 'novel_patterns' in results['analysis_results']:
-                patterns = results['analysis_results']['novel_patterns']
-                critical = patterns.get('critical', 0)
-                high = patterns.get('high', 0)
+            if "novel_patterns" in results["analysis_results"]:
+                patterns = results["analysis_results"]["novel_patterns"]
+                critical = patterns.get("critical", 0)
+                high = patterns.get("high", 0)
                 if critical > 0 or high > 0:
                     print(f"  ⚠️  Critical: {critical}, High: {high}")
 
@@ -195,9 +230,9 @@ def main():
 
     # Final summary
     print()
-    print("="*70)
+    print("=" * 70)
     print(" 🎯 SCAN SUMMARY")
-    print("="*70)
+    print("=" * 70)
     print(f"  Contracts scanned: {successful_scans}/{len(contracts)}")
     print(f"  Total findings: {total_findings}")
 
