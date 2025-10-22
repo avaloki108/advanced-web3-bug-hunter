@@ -809,71 +809,363 @@
       "accuracy_score": 1.0,
       "processing_time": 0.000392,
       "llm_insights": []
+    },
+    {
+      "id": "SCAN-20251022-004825-3a1a67a2",
+      "timestamp": "2025-10-22T00:48:25.785042",
+      "contract_hash": "3a1a67a2b94134e0",
+      "vulnerabilities_found": [
+        "just_in_time_liquidity_attack",
+        "stale_oracle_price_exploitation",
+        "cross_function_reentrancy",
+        "cross_function_reentrancy",
+        "cross_function_reentrancy",
+        "cross_function_reentrancy",
+        "cross_function_reentrancy",
+        "read_only_reentrancy",
+        "twap_manipulation_short_window",
+        "callback_reentrancy_vulnerability",
+        "multiple_external_calls_no_guard",
+        "multiple_external_calls_no_guard",
+        "multiple_external_calls_no_guard",
+        "multiple_external_calls_no_guard",
+        "potential_backdoor",
+        "unchecked_call_return_value",
+        "unchecked_call_return_value",
+        "unchecked_call_return_value",
+        "Gas Griefing via Return Data"
+      ],
+      "false_positives_marked": [],
+      "patterns_extracted": [
+        {
+          "type": "just_in_time_liquidity_attack",
+          "severity": "medium",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "stale_oracle_price_exploitation",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "cross_function_reentrancy",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "cross_function_reentrancy",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "cross_function_reentrancy",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "cross_function_reentrancy",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "cross_function_reentrancy",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "read_only_reentrancy",
+          "severity": "medium",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "twap_manipulation_short_window",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "callback_reentrancy_vulnerability",
+          "severity": "critical",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "multiple_external_calls_no_guard",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "multiple_external_calls_no_guard",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "multiple_external_calls_no_guard",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "multiple_external_calls_no_guard",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "potential_backdoor",
+          "severity": "critical",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "unchecked_call_return_value",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "unchecked_call_return_value",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "unchecked_call_return_value",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "Gas Griefing via Return Data",
+          "severity": "medium",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        }
+      ],
+      "accuracy_score": 1.0,
+      "processing_time": 11.106288,
+      "llm_insights": []
+    },
+    {
+      "id": "SCAN-20251022-004845-3a1a67a2",
+      "timestamp": "2025-10-22T00:48:45.018833",
+      "contract_hash": "3a1a67a2b94134e0",
+      "vulnerabilities_found": [
+        "just_in_time_liquidity_attack",
+        "stale_oracle_price_exploitation",
+        "cross_function_reentrancy",
+        "cross_function_reentrancy",
+        "cross_function_reentrancy",
+        "cross_function_reentrancy",
+        "cross_function_reentrancy",
+        "read_only_reentrancy",
+        "twap_manipulation_short_window",
+        "callback_reentrancy_vulnerability",
+        "multiple_external_calls_no_guard",
+        "multiple_external_calls_no_guard",
+        "multiple_external_calls_no_guard",
+        "multiple_external_calls_no_guard",
+        "potential_backdoor",
+        "unchecked_call_return_value",
+        "unchecked_call_return_value",
+        "unchecked_call_return_value",
+        "Gas Griefing via Return Data"
+      ],
+      "false_positives_marked": [],
+      "patterns_extracted": [
+        {
+          "type": "just_in_time_liquidity_attack",
+          "severity": "medium",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "stale_oracle_price_exploitation",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "cross_function_reentrancy",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "cross_function_reentrancy",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "cross_function_reentrancy",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "cross_function_reentrancy",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "cross_function_reentrancy",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "read_only_reentrancy",
+          "severity": "medium",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "twap_manipulation_short_window",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "callback_reentrancy_vulnerability",
+          "severity": "critical",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "multiple_external_calls_no_guard",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "multiple_external_calls_no_guard",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "multiple_external_calls_no_guard",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "multiple_external_calls_no_guard",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "potential_backdoor",
+          "severity": "critical",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "unchecked_call_return_value",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "unchecked_call_return_value",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "unchecked_call_return_value",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "Gas Griefing via Return Data",
+          "severity": "medium",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        }
+      ],
+      "accuracy_score": 1.0,
+      "processing_time": 11.072029,
+      "llm_insights": []
     }
   ],
   "pattern_effectiveness": {
     "just_in_time_liquidity_attack": {
       "pattern_name": "just_in_time_liquidity_attack",
-      "times_detected": 6,
-      "true_positives": 6,
+      "times_detected": 8,
+      "true_positives": 8,
       "false_positives": 0,
-      "last_updated": "2025-10-21T12:45:04.613173",
+      "last_updated": "2025-10-22T00:48:45.018843",
       "confidence_score": 1.0
     },
     "stale_oracle_price_exploitation": {
       "pattern_name": "stale_oracle_price_exploitation",
-      "times_detected": 8,
-      "true_positives": 8,
+      "times_detected": 10,
+      "true_positives": 10,
       "false_positives": 0,
-      "last_updated": "2025-10-21T12:45:04.613181",
+      "last_updated": "2025-10-22T00:48:45.018846",
       "confidence_score": 1.0
     },
     "cross_function_reentrancy": {
       "pattern_name": "cross_function_reentrancy",
-      "times_detected": 31,
-      "true_positives": 31,
+      "times_detected": 41,
+      "true_positives": 41,
       "false_positives": 0,
-      "last_updated": "2025-10-21T12:45:04.613188",
+      "last_updated": "2025-10-22T00:48:45.018853",
       "confidence_score": 1.0
     },
     "read_only_reentrancy": {
       "pattern_name": "read_only_reentrancy",
-      "times_detected": 5,
-      "true_positives": 5,
+      "times_detected": 7,
+      "true_positives": 7,
       "false_positives": 0,
-      "last_updated": "2025-10-21T12:45:04.613189",
+      "last_updated": "2025-10-22T00:48:45.018854",
       "confidence_score": 1.0
     },
     "twap_manipulation_short_window": {
       "pattern_name": "twap_manipulation_short_window",
-      "times_detected": 3,
-      "true_positives": 3,
+      "times_detected": 5,
+      "true_positives": 5,
       "false_positives": 0,
-      "last_updated": "2025-10-21T01:46:17.858166",
+      "last_updated": "2025-10-22T00:48:45.018855",
       "confidence_score": 1.0
     },
     "multiple_external_calls_no_guard": {
       "pattern_name": "multiple_external_calls_no_guard",
-      "times_detected": 22,
-      "true_positives": 22,
+      "times_detected": 30,
+      "true_positives": 30,
       "false_positives": 0,
-      "last_updated": "2025-10-21T12:45:04.613204",
+      "last_updated": "2025-10-22T00:48:45.018862",
       "confidence_score": 1.0
     },
     "potential_backdoor": {
       "pattern_name": "potential_backdoor",
-      "times_detected": 5,
-      "true_positives": 5,
+      "times_detected": 7,
+      "true_positives": 7,
       "false_positives": 0,
-      "last_updated": "2025-10-21T12:45:04.613205",
+      "last_updated": "2025-10-22T00:48:45.018863",
       "confidence_score": 1.0
     },
     "unchecked_call_return_value": {
       "pattern_name": "unchecked_call_return_value",
-      "times_detected": 14,
-      "true_positives": 14,
+      "times_detected": 20,
+      "true_positives": 20,
       "false_positives": 0,
-      "last_updated": "2025-10-21T12:44:06.886937",
+      "last_updated": "2025-10-22T00:48:45.018866",
       "confidence_score": 1.0
     },
     "flash_loan_governance_attack": {
@@ -894,10 +1186,10 @@
     },
     "Gas Griefing via Return Data": {
       "pattern_name": "Gas Griefing via Return Data",
-      "times_detected": 3,
-      "true_positives": 3,
+      "times_detected": 5,
+      "true_positives": 5,
       "false_positives": 0,
-      "last_updated": "2025-10-21T12:44:06.886939",
+      "last_updated": "2025-10-22T00:48:45.018868",
       "confidence_score": 1.0
     },
     "flash_loan_oracle_manipulation": {
@@ -910,10 +1202,10 @@
     },
     "callback_reentrancy_vulnerability": {
       "pattern_name": "callback_reentrancy_vulnerability",
-      "times_detected": 1,
-      "true_positives": 1,
+      "times_detected": 3,
+      "true_positives": 3,
       "false_positives": 0,
-      "last_updated": "2025-10-21T12:45:04.613196",
+      "last_updated": "2025-10-22T00:48:45.018857",
       "confidence_score": 1.0
     },
     "unchecked_erc20_return_values": {
@@ -988,7 +1280,8 @@
       "// Test contract with new vulnerability patterns\npragma solidity ^0.8.0;\n\ninterface IERC20 {\n    function transfer(address to, uint256 amount) external returns (bool);\n    function transferFrom(addres"
     ],
     "callback_reentrancy_vulnerability": [
-      "// Test contract with new vulnerability patterns\npragma solidity ^0.8.0;\n\ninterface IERC20 {\n    function transfer(address to, uint256 amount) external returns (bool);\n    function transferFrom(addres"
+      "// Test contract with new vulnerability patterns\npragma solidity ^0.8.0;\n\ninterface IERC20 {\n    function transfer(address to, uint256 amount) external returns (bool);\n    function transferFrom(addres",
+      "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\n/**\n * VULNERABLE VAULT CONTRACT - FOR TESTING ONLY\n * Contains multiple intentional vulnerabilities for demonstration\n * DO NOT USE IN PRODUCT"
     ],
     "unchecked_erc20_return_values": [
       "// Test contract with new vulnerability patterns\npragma solidity ^0.8.0;\n\ninterface IERC20 {\n    function transfer(address to, uint256 amount) external returns (bool);\n    function transferFrom(addres"
@@ -998,6 +1291,8 @@
     ]
   },
   "accuracy_history": [
+    1.0,
+    1.0,
     1.0,
     1.0,
     1.0,
@@ -1029,6 +1324,6 @@
     }
   },
   "prompt_effectiveness": {},
-  "last_updated": "2025-10-22T00:26:12.384261",
-  "total_scans": 7
+  "last_updated": "2025-10-22T00:48:45.020523",
+  "total_scans": 9
 }

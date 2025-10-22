@@ -12,7 +12,7 @@ from typing import Dict, List, Any
 from datetime import datetime
 
 # Import advanced modules
-from advanced.symbolic_execution_engine import AdvancedSymbolicExecutor, SymbolicState
+from advanced.symbolic_execution_engine import AdvancedSymbolicExecutor, SymbolicState, VarType
 from advanced.novel_vulnerability_patterns import NovelPatternDetector
 from advanced.behavioral_anomaly_detector import BehavioralAnomalyDetector
 from advanced.llm_reasoning_engine import AdvancedLLMReasoner
@@ -20,6 +20,7 @@ from advanced.enhanced_fuzzing_orchestrator import EnhancedFuzzingOrchestrator, 
 from advanced.persistent_learning import PersistentLearningDB, get_learning_db
 from advanced.benchmark_comparison import BenchmarkSystem
 from advanced.rare_vulnerability_detectors import RareVulnerabilityDetector
+from advanced.verification_pipeline import MultiLayerVerificationPipeline
 
 # Import existing modules (optional dependencies)
 try:
@@ -60,6 +61,14 @@ class AdvancedWeb3BugHunter:
             anthropic_key=self.config.get('anthropic_key')
         )
         
+        # Initialize multi-layer verification pipeline
+        self.verification_pipeline = MultiLayerVerificationPipeline(
+            pattern_detector=self.pattern_detector,
+            rare_detector=self.rare_detector,
+            symbolic_executor=self.symbolic_executor,
+            anomaly_detector=self.anomaly_detector
+        )
+        
         # Initialize learning system
         self.learning_db = get_learning_db()
 
@@ -67,7 +76,8 @@ class AdvancedWeb3BugHunter:
             "contract": str(self.contract_path),
             "timestamp": self.start_time.isoformat(),
             "analysis_results": {},
-            "learning_enhanced": True
+            "learning_enhanced": True,
+            "verification_enabled": True
         }
 
     def run_comprehensive_analysis(self) -> Dict[str, Any]:
@@ -200,6 +210,81 @@ class AdvancedWeb3BugHunter:
             print(f"Fuzzing campaign completed")
         else:
             print("\n[5/7] Skipping fuzzing (disabled in config)")
+
+        # Phase 5.5: Multi-Layer Verification (NEW!)
+        if self.config.get('use_verification', True):
+            print("\n[5.5/7] Running Multi-Layer Verification Pipeline...")
+            print("-" * 70)
+            print("🔍 Cross-validating findings with multi-layer verification...")
+            
+            # Create hypotheses from detected vulnerabilities
+            hypotheses = self._create_hypotheses_from_findings(patterns, anomalies, rare_vulns)
+            
+            if hypotheses:
+                print(f"Verifying {len(hypotheses)} vulnerability hypotheses...")
+                
+                # Verify each hypothesis through the pipeline
+                verified_findings = []
+                rejected_findings = []
+                uncertain_findings = []
+                
+                for i, hypothesis in enumerate(hypotheses, 1):
+                    result = self.verification_pipeline.verify_hypothesis_sync(
+                        hypothesis=hypothesis,
+                        contract_code=contract_code,
+                        run_all_layers=True
+                    )
+                    
+                    if result['verification_status'] == 'verified':
+                        verified_findings.append({
+                            'hypothesis': hypothesis,
+                            'confidence': result['final_confidence'],
+                            'layer_agreement': result['cross_layer_agreement']
+                        })
+                    elif result['verification_status'] == 'uncertain':
+                        uncertain_findings.append({
+                            'hypothesis': hypothesis,
+                            'confidence': result['final_confidence'],
+                            'layer_agreement': result['cross_layer_agreement']
+                        })
+                    else:
+                        rejected_findings.append({
+                            'hypothesis': hypothesis,
+                            'confidence': result['final_confidence'],
+                            'reason': result.get('validation_reason', 'Unknown')
+                        })
+                
+                # Get verification statistics
+                verification_stats = self.verification_pipeline.get_verification_stats()
+                
+                self.results["analysis_results"]["verification"] = {
+                    "total_hypotheses": len(hypotheses),
+                    "verified": len(verified_findings),
+                    "rejected": len(rejected_findings),
+                    "uncertain": len(uncertain_findings),
+                    "statistics": verification_stats,
+                    "verified_findings": [
+                        {
+                            'name': v['hypothesis'].name,
+                            'confidence': v['confidence'],
+                            'layer_agreement': v['layer_agreement']
+                        } for v in verified_findings
+                    ]
+                }
+                
+                print(f"✓ Verification complete:")
+                print(f"  • Verified: {len(verified_findings)} (high confidence)")
+                print(f"  • Uncertain: {len(uncertain_findings)} (needs review)")
+                print(f"  • Rejected: {len(rejected_findings)} (likely false positives)")
+                print(f"  • False positive reduction: {verification_stats.get('false_positive_reduction', 0):.1%}")
+            else:
+                print("No findings to verify")
+                self.results["analysis_results"]["verification"] = {
+                    "total_hypotheses": 0,
+                    "message": "No findings to verify"
+                }
+        else:
+            print("\n[5.5/7] Skipping verification (disabled in config)")
 
         # Phase 6: Generate Final Report & LEARN!
         print("\n[6/7] Generating Comprehensive Report & Recording Learning...")
@@ -461,6 +546,60 @@ class AdvancedWeb3BugHunter:
             "references": vuln.references,
             "cve_id": vuln.cve_id
         }
+
+    def _create_hypotheses_from_findings(self, patterns, anomalies, rare_vulns):
+        """Create verification hypotheses from detected findings"""
+        from dataclasses import dataclass
+        
+        @dataclass
+        class VerificationHypothesis:
+            id: str
+            name: str
+            type: str
+            description: str
+            severity: str
+            confidence: float
+            attack_scenario: str = ""
+        
+        hypotheses = []
+        
+        # Create hypotheses from patterns
+        for i, pattern in enumerate(patterns):
+            hypotheses.append(VerificationHypothesis(
+                id=f"pattern_{i}",
+                name=pattern.name,
+                type=str(pattern.category.value if hasattr(pattern.category, 'value') else pattern.category),
+                description=pattern.description,
+                severity=pattern.severity,
+                confidence=pattern.confidence,
+                attack_scenario=pattern.exploit_scenario
+            ))
+        
+        # Create hypotheses from anomalies
+        for i, anomaly in enumerate(anomalies):
+            hypotheses.append(VerificationHypothesis(
+                id=f"anomaly_{i}",
+                name=anomaly.name,
+                type=str(anomaly.anomaly_type.value if hasattr(anomaly.anomaly_type, 'value') else anomaly.anomaly_type),
+                description=anomaly.description,
+                severity=anomaly.severity,
+                confidence=anomaly.confidence,
+                attack_scenario=anomaly.potential_exploit or ""
+            ))
+        
+        # Create hypotheses from rare vulnerabilities
+        for i, rare_vuln in enumerate(rare_vulns):
+            hypotheses.append(VerificationHypothesis(
+                id=f"rare_{i}",
+                name=rare_vuln.name,
+                type="rare_vulnerability",
+                description=rare_vuln.description,
+                severity=rare_vuln.severity,
+                confidence=rare_vuln.confidence,
+                attack_scenario=rare_vuln.exploit_scenario
+            ))
+        
+        return hypotheses
 
     def _generate_final_report(self):
         """Generate comprehensive final report"""
