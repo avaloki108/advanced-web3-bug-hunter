@@ -51,6 +51,9 @@ class AdvancedWeb3BugHunter:
         self.config = config or {}
         self.start_time = datetime.now()
 
+        # Initialize learning system first (needed by verification pipeline)
+        self.learning_db = get_learning_db()
+
         # Initialize components
         self.symbolic_executor = AdvancedSymbolicExecutor()
         self.pattern_detector = NovelPatternDetector()
@@ -66,11 +69,9 @@ class AdvancedWeb3BugHunter:
             pattern_detector=self.pattern_detector,
             rare_detector=self.rare_detector,
             symbolic_executor=self.symbolic_executor,
-            anomaly_detector=self.anomaly_detector
+            anomaly_detector=self.anomaly_detector,
+            learning_db=self.learning_db  # Pass learning DB for adaptive weights
         )
-        
-        # Initialize learning system
-        self.learning_db = get_learning_db()
 
         self.results = {
             "contract": str(self.contract_path),

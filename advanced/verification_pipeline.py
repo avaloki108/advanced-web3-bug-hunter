@@ -437,7 +437,8 @@ class MultiLayerVerificationPipeline:
                  symbolic_executor=None,
                  fuzzing_orchestrator=None,
                  anomaly_detector=None,
-                 poc_generator=None):
+                 poc_generator=None,
+                 learning_db=None):
         """
         Initialize multi-layer verification pipeline
         
@@ -448,6 +449,7 @@ class MultiLayerVerificationPipeline:
             fuzzing_orchestrator: EnhancedFuzzingOrchestrator instance
             anomaly_detector: BehavioralAnomalyDetector instance
             poc_generator: PoCGenerator instance
+            learning_db: PersistentLearningDB instance for adaptive learning
         """
         # Initialize verification layers
         self.layers = [
@@ -458,9 +460,17 @@ class MultiLayerVerificationPipeline:
         ]
         
         self.poc_generator = poc_generator
+        self.learning_db = learning_db
         
-        # Initialize scoring and validation
-        self.confidence_scorer = ConfidenceScorer()
+        # Initialize scoring and validation with learned weights if available
+        initial_weights = None
+        if learning_db:
+            learned_weights = learning_db.get_optimal_layer_weights()
+            if learned_weights:
+                initial_weights = learned_weights
+                print(f"✓ Using learned verification weights from {len(learning_db.verification_layer_metrics)} tracked layers")
+        
+        self.confidence_scorer = ConfidenceScorer(weights=initial_weights)
         self.cross_validator = CrossValidator(self.confidence_scorer)
         
         # History tracking
