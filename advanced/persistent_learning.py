@@ -48,6 +48,20 @@ class HypothesisQualityMetrics:
     avg_final_confidence: float
     success_rate: float
     last_updated: str
+
+
+@dataclass
+class VerificationLayerMetrics:
+    """Track performance of verification layers"""
+    layer_name: str
+    total_verifications: int
+    true_positives: int
+    false_positives: int
+    false_negatives: int
+    avg_confidence: float
+    avg_execution_time: float
+    accuracy: float
+    last_updated: str
     
 
 class PersistentLearningDB:
@@ -71,6 +85,7 @@ class PersistentLearningDB:
         self.hypothesis_quality_trends: Dict[str, List[float]] = {}  # Quality trends over time
         self.user_feedback_log: List[Dict[str, Any]] = []  # User feedback history
         
+        self.verification_layer_metrics: Dict[str, VerificationLayerMetrics] = {}  # NEW: Track verification layers
         self._load_database()
         
     def _load_database(self):
@@ -125,6 +140,12 @@ class PersistentLearningDB:
                 
                 if 'user_feedback_log' in data:
                     self.user_feedback_log = data['user_feedback_log']
+                # Load verification layer metrics
+                if 'verification_layer_metrics' in data:
+                    self.verification_layer_metrics = {
+                        name: VerificationLayerMetrics(**metrics)
+                        for name, metrics in data['verification_layer_metrics'].items()
+                    }
                     
                 print(f"✓ Loaded learning database: {len(self.learning_records)} records")
             except Exception as e:
@@ -151,6 +172,10 @@ class PersistentLearningDB:
                 'verification_weights': self.verification_weights,
                 'hypothesis_quality_trends': self.hypothesis_quality_trends,
                 'user_feedback_log': self.user_feedback_log,
+                'verification_layer_metrics': {
+                    name: asdict(metrics)
+                    for name, metrics in self.verification_layer_metrics.items()
+                },
                 'last_updated': datetime.now().isoformat(),
                 'total_scans': len(self.learning_records)
             }
@@ -323,15 +348,107 @@ class PersistentLearningDB:
             'initial_accuracy': initial_accuracy,
             'improvement_percentage': improvement * 100,
             'total_patterns_learned': len(self.pattern_effectiveness),
-            'top_patterns': [
-                {
-                    'name': p.pattern_name,
-                    'confidence': p.confidence_score,
-                    'detections': p.times_detected
-                }
-                for p in top_patterns
-            ],
-            'vulnerability_types_known': len(self.vulnerability_corpus)
+            'top_patterns': [p.pattern_name for p in top_patterns],
+            'hypothesis_metrics': self._get_hypothesis_metrics_summary()
+        }
+
+    def record_hypothesis_quality(self,
+                                  hypothesis_type: str,
+                                  generated_count: int,
+                                  verified_count: int,
+                                  rejected_count: int,
+                                  avg_initial_confidence: float,
+                                  avg_final_confidence: float):
+        """
+        Record quality metrics for AI-generated hypotheses
+        Used by prompt chain orchestrator
+        
+        Args:
+            hypothesis_type: Type of hypothesis (e.g., 'flash_loan_attack', 'reentrancy')
+            generated_count: Total hypotheses generated
+            verified_count: Number verified as plausible
+            rejected_count: Number rejected as implausible
+            avg_initial_confidence: Average initial confidence score
+            avg_final_confidence: Average final confidence after validation
+        """
+        if hypothesis_type not in self.hypothesis_metrics:
+            self.hypothesis_metrics[hypothesis_type] = HypothesisQualityMetrics(
+                hypothesis_type=hypothesis_type,
+                total_generated=0,
+                verified_count=0,
+                rejected_count=0,
+                avg_initial_confidence=0.0,
+                avg_final_confidence=0.0,
+                success_rate=0.0,
+                last_updated=datetime.now().isoformat()
+            )
+        
+        metrics = self.hypothesis_metrics[hypothesis_type]
+        
+        # Update counts
+        metrics.total_generated += generated_count
+        metrics.verified_count += verified_count
+        metrics.rejected_count += rejected_count
+        
+        # Update confidence averages (weighted)
+        total_prev = metrics.total_generated - generated_count
+        if total_prev > 0:
+            metrics.avg_initial_confidence = (
+                (metrics.avg_initial_confidence * total_prev + avg_initial_confidence * generated_count) /
+                metrics.total_generated
+            )
+            metrics.avg_final_confidence = (
+                (metrics.avg_final_confidence * total_prev + avg_final_confidence * generated_count) /
+                metrics.total_generated
+            )
+        else:
+            metrics.avg_initial_confidence = avg_initial_confidence
+            metrics.avg_final_confidence = avg_final_confidence
+        
+        # Calculate success rate
+        total_processed = metrics.verified_count + metrics.rejected_count
+        metrics.success_rate = metrics.verified_count / total_processed if total_processed > 0 else 0.0
+        metrics.last_updated = datetime.now().isoformat()
+        
+        # Save to disk
+        self.save_database()
+
+    def get_learned_patterns_text(self, max_patterns: int = 10) -> List[str]:
+        """
+        Get learned patterns as text descriptions for prompt enhancement
+        
+        Args:
+            max_patterns: Maximum number of patterns to return
+            
+        Returns:
+            List of pattern descriptions
+        """
+        patterns = self.get_learned_patterns_for_analysis()
+        pattern_texts = []
+        
+        for pattern in patterns[:max_patterns]:
+            text = f"{pattern['name']} (confidence: {pattern['confidence']:.2f}, detected {pattern['times_detected']} times)"
+            pattern_texts.append(text)
+        
+        return pattern_texts
+
+    def _get_hypothesis_metrics_summary(self) -> Dict[str, Any]:
+        """Get summary of hypothesis quality metrics"""
+        if not self.hypothesis_metrics:
+            return {'status': 'no_data'}
+        
+        total_generated = sum(m.total_generated for m in self.hypothesis_metrics.values())
+        total_verified = sum(m.verified_count for m in self.hypothesis_metrics.values())
+        total_rejected = sum(m.rejected_count for m in self.hypothesis_metrics.values())
+        
+        avg_success_rate = sum(m.success_rate for m in self.hypothesis_metrics.values()) / len(self.hypothesis_metrics)
+        
+        return {
+            'total_hypotheses_generated': total_generated,
+            'total_verified': total_verified,
+            'total_rejected': total_rejected,
+            'overall_success_rate': avg_success_rate,
+            'hypothesis_types_tracked': len(self.hypothesis_metrics)
         }
         
     def get_enhanced_llm_prompt(self) -> str:
@@ -495,6 +612,114 @@ Provide detailed analysis with specific code references.
                 key=lambda x: x[1],
                 reverse=True
             )[:5]
+        }
+        
+    def record_verification_layer_performance(self, 
+                                             layer_name: str,
+                                             verified: bool,
+                                             confidence: float,
+                                             execution_time: float,
+                                             is_true_positive: Optional[bool] = None):
+        """
+        Record performance of a verification layer
+        
+        Args:
+            layer_name: Name of the verification layer
+            verified: Whether the layer verified the hypothesis
+            confidence: Confidence score from the layer
+            execution_time: Time taken to execute the layer
+            is_true_positive: Whether it was a true positive (if known)
+        """
+        if layer_name not in self.verification_layer_metrics:
+            self.verification_layer_metrics[layer_name] = VerificationLayerMetrics(
+                layer_name=layer_name,
+                total_verifications=0,
+                true_positives=0,
+                false_positives=0,
+                false_negatives=0,
+                avg_confidence=0.0,
+                avg_execution_time=0.0,
+                accuracy=0.0,
+                last_updated=datetime.now().isoformat()
+            )
+        
+        metrics = self.verification_layer_metrics[layer_name]
+        
+        # Update counts
+        metrics.total_verifications += 1
+        
+        if is_true_positive is not None:
+            if verified and is_true_positive:
+                metrics.true_positives += 1
+            elif verified and not is_true_positive:
+                metrics.false_positives += 1
+            elif not verified and is_true_positive:
+                metrics.false_negatives += 1
+        
+        # Update averages
+        n = metrics.total_verifications
+        metrics.avg_confidence = (metrics.avg_confidence * (n - 1) + confidence) / n
+        metrics.avg_execution_time = (metrics.avg_execution_time * (n - 1) + execution_time) / n
+        
+        # Calculate accuracy
+        if metrics.true_positives + metrics.false_positives > 0:
+            metrics.accuracy = metrics.true_positives / (metrics.true_positives + metrics.false_positives)
+        
+        metrics.last_updated = datetime.now().isoformat()
+        
+        self.save_database()
+    
+    def get_optimal_layer_weights(self) -> Dict[str, float]:
+        """
+        Calculate optimal weights for verification layers based on historical accuracy
+        
+        Returns:
+            Dictionary mapping layer names to weights (sum to 1.0)
+        """
+        if not self.verification_layer_metrics:
+            # Return default weights if no history
+            return {
+                'static_analysis': 0.15,
+                'symbolic_execution': 0.25,
+                'dynamic_testing': 0.25,
+                'behavioral_analysis': 0.15,
+                'poc_execution': 0.20
+            }
+        
+        # Calculate weights based on accuracy
+        weights = {}
+        total_accuracy = 0.0
+        
+        for layer_name, metrics in self.verification_layer_metrics.items():
+            if metrics.total_verifications >= 5:  # Need minimum data
+                # Use accuracy as weight basis
+                accuracy = metrics.accuracy if metrics.accuracy > 0 else 0.5
+                weights[layer_name] = accuracy
+                total_accuracy += accuracy
+        
+        # Normalize to sum to 1.0
+        if total_accuracy > 0:
+            weights = {k: v / total_accuracy for k, v in weights.items()}
+        else:
+            # Fall back to equal weights
+            weights = {k: 1.0 / len(self.verification_layer_metrics) 
+                      for k in self.verification_layer_metrics.keys()}
+        
+        return weights
+    
+    def get_verification_layer_stats(self) -> Dict[str, Dict[str, Any]]:
+        """Get statistics for all verification layers"""
+        return {
+            name: {
+                'total_verifications': metrics.total_verifications,
+                'accuracy': metrics.accuracy,
+                'avg_confidence': metrics.avg_confidence,
+                'avg_execution_time': metrics.avg_execution_time,
+                'true_positives': metrics.true_positives,
+                'false_positives': metrics.false_positives,
+                'last_updated': metrics.last_updated
+            }
+            for name, metrics in self.verification_layer_metrics.items()
         }
         
     def suggest_improvements(self) -> List[str]:
