@@ -4,7 +4,6 @@ Tracks what the tool learns, improves accuracy over time, and persists knowledge
 """
 
 import json
-import os
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 from pathlib import Path
@@ -857,13 +856,13 @@ if __name__ == "__main__":
         
     # Show improvement
     metrics = db.get_improvement_metrics()
-    print(f"\n📊 Improvement Metrics:")
+    print("\n📊 Improvement Metrics:")
     print(f"   Total scans: {metrics['total_scans']}")
     print(f"   Patterns learned: {metrics['total_patterns_learned']}")
     print(f"   Top pattern: {metrics['top_patterns'][0]['name']}")
     
     # Show enhanced prompt
-    print(f"\n📝 Enhanced LLM Prompt (first 500 chars):")
+    print("\n📝 Enhanced LLM Prompt (first 500 chars):")
     print(db.get_enhanced_llm_prompt()[:500])
     
     print("\n" + "="*70)

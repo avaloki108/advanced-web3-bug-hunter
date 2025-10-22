@@ -163,16 +163,16 @@ aiohttp>=3.9.0
 # ============================================================================
 
 # Recommended setup (no conflicts):
-# uv pip install -r requirements-core.txt
-# uv pip install slither-analyzer web3 py-solc-x hypothesis
+ uv pip install -r requirements-core.txt
+ uv pip install slither-analyzer web3 py-solc-x hypothesis
 
 # Full suite (except Mythril):
-# uv pip install -r requirements-core.txt
-# uv pip install slither-analyzer web3 py-solc-x hypothesis \
-#                graphviz matplotlib pandas scikit-learn numpy \
-#                crytic-compile solc-select
+ uv pip install -r requirements-core.txt
+ uv pip install slither-analyzer web3 py-solc-x hypothesis \
+                graphviz matplotlib pandas scikit-learn numpy \
+                crytic-compile solc-select
 
 # To use Mythril (separate venv):
-# uv venv .venv-mythril
-# source .venv-mythril/bin/activate
-# uv pip install mythril web3
+ uv venv .venv-mythril
+ source .venv-mythril/bin/activate
+ uv pip install mythril web3
