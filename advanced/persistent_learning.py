@@ -48,6 +48,20 @@ class HypothesisQualityMetrics:
     avg_final_confidence: float
     success_rate: float
     last_updated: str
+
+
+@dataclass
+class VerificationLayerMetrics:
+    """Track performance of verification layers"""
+    layer_name: str
+    total_verifications: int
+    true_positives: int
+    false_positives: int
+    false_negatives: int
+    avg_confidence: float
+    avg_execution_time: float
+    accuracy: float
+    last_updated: str
     
 
 class PersistentLearningDB:
@@ -64,6 +78,7 @@ class PersistentLearningDB:
         self.accuracy_history: List[float] = []
         self.hypothesis_metrics: Dict[str, HypothesisQualityMetrics] = {}  # Track hypothesis quality
         self.prompt_effectiveness: Dict[str, float] = {}  # Track prompt effectiveness
+        self.verification_layer_metrics: Dict[str, VerificationLayerMetrics] = {}  # NEW: Track verification layers
         self._load_database()
         
     def _load_database(self):
@@ -105,6 +120,13 @@ class PersistentLearningDB:
                 # Load prompt effectiveness
                 if 'prompt_effectiveness' in data:
                     self.prompt_effectiveness = data['prompt_effectiveness']
+                
+                # Load verification layer metrics
+                if 'verification_layer_metrics' in data:
+                    self.verification_layer_metrics = {
+                        name: VerificationLayerMetrics(**metrics)
+                        for name, metrics in data['verification_layer_metrics'].items()
+                    }
                     
                 print(f"✓ Loaded learning database: {len(self.learning_records)} records")
             except Exception as e:
@@ -126,6 +148,10 @@ class PersistentLearningDB:
                     for name, metrics in self.hypothesis_metrics.items()
                 },
                 'prompt_effectiveness': self.prompt_effectiveness,
+                'verification_layer_metrics': {
+                    name: asdict(metrics)
+                    for name, metrics in self.verification_layer_metrics.items()
+                },
                 'last_updated': datetime.now().isoformat(),
                 'total_scans': len(self.learning_records)
             }
@@ -562,6 +588,114 @@ Provide detailed analysis with specific code references.
                 key=lambda x: x[1],
                 reverse=True
             )[:5]
+        }
+        
+    def record_verification_layer_performance(self, 
+                                             layer_name: str,
+                                             verified: bool,
+                                             confidence: float,
+                                             execution_time: float,
+                                             is_true_positive: Optional[bool] = None):
+        """
+        Record performance of a verification layer
+        
+        Args:
+            layer_name: Name of the verification layer
+            verified: Whether the layer verified the hypothesis
+            confidence: Confidence score from the layer
+            execution_time: Time taken to execute the layer
+            is_true_positive: Whether it was a true positive (if known)
+        """
+        if layer_name not in self.verification_layer_metrics:
+            self.verification_layer_metrics[layer_name] = VerificationLayerMetrics(
+                layer_name=layer_name,
+                total_verifications=0,
+                true_positives=0,
+                false_positives=0,
+                false_negatives=0,
+                avg_confidence=0.0,
+                avg_execution_time=0.0,
+                accuracy=0.0,
+                last_updated=datetime.now().isoformat()
+            )
+        
+        metrics = self.verification_layer_metrics[layer_name]
+        
+        # Update counts
+        metrics.total_verifications += 1
+        
+        if is_true_positive is not None:
+            if verified and is_true_positive:
+                metrics.true_positives += 1
+            elif verified and not is_true_positive:
+                metrics.false_positives += 1
+            elif not verified and is_true_positive:
+                metrics.false_negatives += 1
+        
+        # Update averages
+        n = metrics.total_verifications
+        metrics.avg_confidence = (metrics.avg_confidence * (n - 1) + confidence) / n
+        metrics.avg_execution_time = (metrics.avg_execution_time * (n - 1) + execution_time) / n
+        
+        # Calculate accuracy
+        if metrics.true_positives + metrics.false_positives > 0:
+            metrics.accuracy = metrics.true_positives / (metrics.true_positives + metrics.false_positives)
+        
+        metrics.last_updated = datetime.now().isoformat()
+        
+        self.save_database()
+    
+    def get_optimal_layer_weights(self) -> Dict[str, float]:
+        """
+        Calculate optimal weights for verification layers based on historical accuracy
+        
+        Returns:
+            Dictionary mapping layer names to weights (sum to 1.0)
+        """
+        if not self.verification_layer_metrics:
+            # Return default weights if no history
+            return {
+                'static_analysis': 0.15,
+                'symbolic_execution': 0.25,
+                'dynamic_testing': 0.25,
+                'behavioral_analysis': 0.15,
+                'poc_execution': 0.20
+            }
+        
+        # Calculate weights based on accuracy
+        weights = {}
+        total_accuracy = 0.0
+        
+        for layer_name, metrics in self.verification_layer_metrics.items():
+            if metrics.total_verifications >= 5:  # Need minimum data
+                # Use accuracy as weight basis
+                accuracy = metrics.accuracy if metrics.accuracy > 0 else 0.5
+                weights[layer_name] = accuracy
+                total_accuracy += accuracy
+        
+        # Normalize to sum to 1.0
+        if total_accuracy > 0:
+            weights = {k: v / total_accuracy for k, v in weights.items()}
+        else:
+            # Fall back to equal weights
+            weights = {k: 1.0 / len(self.verification_layer_metrics) 
+                      for k in self.verification_layer_metrics.keys()}
+        
+        return weights
+    
+    def get_verification_layer_stats(self) -> Dict[str, Dict[str, Any]]:
+        """Get statistics for all verification layers"""
+        return {
+            name: {
+                'total_verifications': metrics.total_verifications,
+                'accuracy': metrics.accuracy,
+                'avg_confidence': metrics.avg_confidence,
+                'avg_execution_time': metrics.avg_execution_time,
+                'true_positives': metrics.true_positives,
+                'false_positives': metrics.false_positives,
+                'last_updated': metrics.last_updated
+            }
+            for name, metrics in self.verification_layer_metrics.items()
         }
         
     def suggest_improvements(self) -> List[str]:
