@@ -648,6 +648,38 @@ class AdvancedWeb3BugHunter:
             risk_level = "LOW"
 
         print(f"\nOverall Risk Level: {risk_level}")
+        
+        # Verification summary (NEW!)
+        if "verification" in analysis:
+            verification = analysis["verification"]
+            print("\n" + "-" * 70)
+            print("VERIFICATION PIPELINE SUMMARY")
+            print("-" * 70)
+            
+            if verification.get('total_hypotheses', 0) > 0:
+                verified_count = verification.get('verified', 0)
+                uncertain_count = verification.get('uncertain', 0)
+                rejected_count = verification.get('rejected', 0)
+                
+                print(f"\nHypotheses Tested: {verification['total_hypotheses']}")
+                print(f"  ✓ Verified (High Confidence): {verified_count}")
+                print(f"  ? Uncertain (Needs Review): {uncertain_count}")
+                print(f"  ✗ Rejected (False Positives): {rejected_count}")
+                
+                if 'statistics' in verification:
+                    stats = verification['statistics']
+                    print(f"\nPipeline Performance:")
+                    print(f"  Average Confidence: {stats.get('avg_confidence', 0):.2%}")
+                    print(f"  Average Layer Agreement: {stats.get('avg_cross_layer_agreement', 0):.1f}/4 layers")
+                    print(f"  False Positive Reduction: {stats.get('false_positive_reduction', 0):.1%}")
+                
+                if verification.get('verified_findings'):
+                    print(f"\n🎯 HIGH-CONFIDENCE FINDINGS ({len(verification['verified_findings'])}):")
+                    for i, finding in enumerate(verification['verified_findings'][:5], 1):
+                        print(f"  {i}. {finding['name']}")
+                        print(f"     Confidence: {finding['confidence']:.2%} | Agreement: {finding['layer_agreement']}/4 layers")
+            else:
+                print("No verification performed")
 
         # Save to file
         output_file = Path("bug_hunter_report.json")
@@ -666,6 +698,7 @@ def main():
     parser.add_argument("--anthropic-key", help="Anthropic API key for Claude")
     parser.add_argument("--no-llm", action="store_true", help="Disable LLM analysis")
     parser.add_argument("--no-fuzzing", action="store_true", help="Disable fuzzing")
+    parser.add_argument("--no-verification", action="store_true", help="Disable multi-layer verification")
     parser.add_argument("--output", "-o", help="Output file for results (default: bug_hunter_report.json)")
     parser.add_argument("--benchmark", action="store_true", help="Run benchmark comparison vs Slither/Mythril")
     parser.add_argument("--show-learning", action="store_true", help="Show learning metrics and exit")
@@ -727,6 +760,7 @@ def main():
         "anthropic_key": args.anthropic_key,
         "use_llm": not args.no_llm,
         "use_fuzzing": not args.no_fuzzing,
+        "use_verification": not args.no_verification,
         "output_file": args.output or "bug_hunter_report.json"
     }
 
