@@ -20,6 +20,7 @@ from advanced.enhanced_fuzzing_orchestrator import EnhancedFuzzingOrchestrator, 
 from advanced.persistent_learning import PersistentLearningDB, get_learning_db
 from advanced.benchmark_comparison import BenchmarkSystem
 from advanced.rare_vulnerability_detectors import RareVulnerabilityDetector
+from advanced.adaptive_learning import AdaptiveLearningSystem, get_adaptive_system  # NEW
 
 # Import existing modules (optional dependencies)
 try:
@@ -62,12 +63,16 @@ class AdvancedWeb3BugHunter:
         
         # Initialize learning system
         self.learning_db = get_learning_db()
+        
+        # NEW: Initialize adaptive learning system
+        self.adaptive_system = get_adaptive_system(self.learning_db)
 
         self.results = {
             "contract": str(self.contract_path),
             "timestamp": self.start_time.isoformat(),
             "analysis_results": {},
-            "learning_enhanced": True
+            "learning_enhanced": True,
+            "adaptive_learning_enabled": True  # NEW
         }
 
     def run_comprehensive_analysis(self) -> Dict[str, Any]:
@@ -78,6 +83,7 @@ class AdvancedWeb3BugHunter:
         print("="*70)
         print(" ADVANCED WEB3 BUG HUNTER - COMPREHENSIVE ANALYSIS")
         print(" 🧠 LEARNING-ENABLED: Tool improves with every scan!")
+        print(" 🔄 ADAPTIVE LEARNING: Continuous optimization enabled!")
         print("="*70)
         print(f"Contract: {self.contract_path}")
         print(f"Timestamp: {self.results['timestamp']}")
@@ -248,6 +254,36 @@ class AdvancedWeb3BugHunter:
         
         print(f"✓ Learning recorded: {learning_record.id}")
         print(f"✓ Total analyses in knowledge base: {len(self.learning_db.learning_records)}")
+        
+        # NEW: Process results through adaptive learning system
+        print("\n[7/7] Processing Adaptive Learning Feedback...")
+        print("-" * 70)
+        
+        try:
+            # Use asyncio to process scan results
+            import asyncio
+            
+            # Process scan results through adaptive learning
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            adaptive_result = loop.run_until_complete(
+                self.adaptive_system.process_scan_results(self.results)
+            )
+            loop.close()
+            
+            # Update learning database with adaptive learning data
+            self.learning_db.update_adaptive_learning_data(
+                self.adaptive_system.save_state()
+            )
+            
+            print(f"✓ Adaptive learning updated:")
+            print(f"  New patterns learned: {adaptive_result.get('new_patterns_learned', 0)}")
+            print(f"  Verification weights adjusted: {adaptive_result.get('current_verification_weights', {})}")
+            
+            self.results["adaptive_learning_result"] = adaptive_result
+            
+        except Exception as e:
+            print(f"  ⚠️  Adaptive learning update failed: {str(e)}")
         
         # Show improvement suggestions
         suggestions = self.learning_db.suggest_improvements()
@@ -521,7 +557,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Advanced Web3 Bug Hunter - Find novel vulnerabilities in smart contracts with LEARNING"
     )
-    parser.add_argument("contract", help="Path to Solidity contract file")
+    parser.add_argument("contract", nargs='?', help="Path to Solidity contract file")
     parser.add_argument("--openai-key", help="OpenAI API key for LLM analysis")
     parser.add_argument("--anthropic-key", help="Anthropic API key for Claude")
     parser.add_argument("--no-llm", action="store_true", help="Disable LLM analysis")
@@ -529,8 +565,60 @@ def main():
     parser.add_argument("--output", "-o", help="Output file for results (default: bug_hunter_report.json)")
     parser.add_argument("--benchmark", action="store_true", help="Run benchmark comparison vs Slither/Mythril")
     parser.add_argument("--show-learning", action="store_true", help="Show learning metrics and exit")
+    
+    # NEW: User feedback commands
+    parser.add_argument("--mark-false-positive", metavar="PATTERN", help="Mark a pattern as false positive")
+    parser.add_argument("--confirm-vuln", metavar="PATTERN", help="Confirm a vulnerability pattern")
+    parser.add_argument("--feedback-details", help="Additional details for feedback (JSON string)")
 
     args = parser.parse_args()
+    
+    # NEW: Process user feedback commands
+    if args.mark_false_positive or args.confirm_vuln:
+        from advanced.adaptive_learning import get_adaptive_system
+        
+        learning_db = get_learning_db()
+        adaptive_system = get_adaptive_system(learning_db)
+        
+        pattern_name = args.mark_false_positive or args.confirm_vuln
+        feedback_type = 'false_positive' if args.mark_false_positive else 'confirmed'
+        
+        # Parse additional details if provided
+        details = {}
+        if args.feedback_details:
+            try:
+                details = json.loads(args.feedback_details)
+            except json.JSONDecodeError:
+                print(f"Warning: Invalid JSON in --feedback-details, ignoring")
+        
+        # Process feedback
+        feedback = adaptive_system.feedback_processor.process_feedback(
+            vulnerability_id=f"manual-{pattern_name}",
+            feedback_type=feedback_type,
+            pattern_name=pattern_name,
+            details=details
+        )
+        
+        print("="*70)
+        print("USER FEEDBACK PROCESSED")
+        print("="*70)
+        print(f"Pattern: {pattern_name}")
+        print(f"Feedback Type: {feedback_type}")
+        print(f"Timestamp: {feedback.timestamp}")
+        
+        # Update learning database
+        learning_db.update_adaptive_learning_data(adaptive_system.save_state())
+        
+        # Show updated pattern confidence
+        if pattern_name in learning_db.pattern_effectiveness:
+            stats = learning_db.pattern_effectiveness[pattern_name]
+            print(f"\nUpdated Pattern Statistics:")
+            print(f"  Confidence: {stats.confidence_score:.1%}")
+            print(f"  True Positives: {stats.true_positives}")
+            print(f"  False Positives: {stats.false_positives}")
+        
+        print("\n✓ Feedback recorded and learning database updated")
+        sys.exit(0)
     
     # Show learning metrics if requested
     if args.show_learning:
@@ -554,6 +642,43 @@ def main():
             print(f"\nTop Detection Patterns:")
             for i, pattern in enumerate(metrics['top_patterns'][:5], 1):
                 print(f"  {i}. {pattern['name']} (confidence: {pattern['confidence']:.1%}, detections: {pattern['detections']})")
+        
+        # NEW: Show adaptive learning metrics
+        adaptive_metrics = learning_db.get_adaptive_metrics()
+        
+        if adaptive_metrics.get('prompt_performance'):
+            print(f"\n📊 Prompt Performance:")
+            for stage, perf in adaptive_metrics['prompt_performance'].items():
+                print(f"  {stage}:")
+                print(f"    Success Rate: {perf.get('success_rate', 0):.1%}")
+                print(f"    Hypotheses: {perf.get('total_hypotheses', 0)} total, {perf.get('successful_hypotheses', 0)} successful")
+                print(f"    Temperature: {perf.get('avg_temperature', 0):.2f}")
+        
+        if adaptive_metrics.get('verification_weights'):
+            weights = adaptive_metrics['verification_weights'].get('weights', {})
+            if weights:
+                print(f"\n⚖️  Verification Layer Weights:")
+                for layer, weight in weights.items():
+                    print(f"  {layer}: {weight:.2%}")
+                print(f"  Last Updated: {weights.get('last_updated', 'N/A')}")
+        
+        if adaptive_metrics.get('hypothesis_quality_trends'):
+            trends = adaptive_metrics['hypothesis_quality_trends']
+            if trends.get('avg_confidence_over_time'):
+                recent_conf = trends['avg_confidence_over_time'][-1] if trends['avg_confidence_over_time'] else 0
+                print(f"\n📈 Hypothesis Quality Trends:")
+                print(f"  Recent Avg Confidence: {recent_conf:.1%}")
+                if len(trends['avg_confidence_over_time']) >= 2:
+                    initial_conf = trends['avg_confidence_over_time'][0]
+                    improvement = ((recent_conf - initial_conf) / initial_conf * 100) if initial_conf > 0 else 0
+                    print(f"  Confidence Improvement: {improvement:+.1f}%")
+        
+        feedback_info = adaptive_metrics.get('user_feedback', {})
+        if feedback_info.get('total_feedback', 0) > 0:
+            print(f"\n💬 User Feedback:")
+            print(f"  Total Feedback Received: {feedback_info['total_feedback']}")
+            if feedback_info.get('recent_feedback'):
+                print(f"  Recent Feedback Items: {len(feedback_info['recent_feedback'])}")
                 
         suggestions = learning_db.suggest_improvements()
         if suggestions:
@@ -590,7 +715,12 @@ def main():
         "output_file": args.output or "bug_hunter_report.json"
     }
 
-    # Check if contract exists
+    # Check if contract exists (not required for feedback/learning commands)
+    if not args.contract:
+        print("Error: Contract file is required for analysis")
+        print("Use --show-learning or --mark-false-positive without contract file")
+        sys.exit(1)
+    
     if not Path(args.contract).exists():
         print(f"Error: Contract file not found: {args.contract}")
         sys.exit(1)

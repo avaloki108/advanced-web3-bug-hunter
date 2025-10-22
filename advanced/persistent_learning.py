@@ -64,6 +64,13 @@ class PersistentLearningDB:
         self.accuracy_history: List[float] = []
         self.hypothesis_metrics: Dict[str, HypothesisQualityMetrics] = {}  # Track hypothesis quality
         self.prompt_effectiveness: Dict[str, float] = {}  # Track prompt effectiveness
+        
+        # NEW: Adaptive learning fields
+        self.prompt_performance: Dict[str, Any] = {}  # Detailed prompt performance tracking
+        self.verification_weights: Dict[str, Any] = {}  # Verification layer weights
+        self.hypothesis_quality_trends: Dict[str, List[float]] = {}  # Quality trends over time
+        self.user_feedback_log: List[Dict[str, Any]] = []  # User feedback history
+        
         self._load_database()
         
     def _load_database(self):
@@ -105,6 +112,19 @@ class PersistentLearningDB:
                 # Load prompt effectiveness
                 if 'prompt_effectiveness' in data:
                     self.prompt_effectiveness = data['prompt_effectiveness']
+                
+                # Load adaptive learning fields (NEW)
+                if 'prompt_performance' in data:
+                    self.prompt_performance = data['prompt_performance']
+                
+                if 'verification_weights' in data:
+                    self.verification_weights = data['verification_weights']
+                
+                if 'hypothesis_quality_trends' in data:
+                    self.hypothesis_quality_trends = data['hypothesis_quality_trends']
+                
+                if 'user_feedback_log' in data:
+                    self.user_feedback_log = data['user_feedback_log']
                     
                 print(f"✓ Loaded learning database: {len(self.learning_records)} records")
             except Exception as e:
@@ -126,6 +146,11 @@ class PersistentLearningDB:
                     for name, metrics in self.hypothesis_metrics.items()
                 },
                 'prompt_effectiveness': self.prompt_effectiveness,
+                # NEW: Adaptive learning fields
+                'prompt_performance': self.prompt_performance,
+                'verification_weights': self.verification_weights,
+                'hypothesis_quality_trends': self.hypothesis_quality_trends,
+                'user_feedback_log': self.user_feedback_log,
                 'last_updated': datetime.now().isoformat(),
                 'total_scans': len(self.learning_records)
             }
@@ -508,6 +533,62 @@ Provide detailed analysis with specific code references.
             )
             
         return suggestions
+
+
+    def update_adaptive_learning_data(self, adaptive_state: Dict[str, Any]):
+        """
+        Update adaptive learning fields from AdaptiveLearningSystem
+        NEW: Support for adaptive learning integration
+        """
+        if 'prompt_performance' in adaptive_state:
+            self.prompt_performance = adaptive_state['prompt_performance']
+        
+        if 'verification_weights' in adaptive_state:
+            self.verification_weights = adaptive_state['verification_weights']
+        
+        if 'user_feedback_log' in adaptive_state:
+            self.user_feedback_log = adaptive_state['user_feedback_log']
+        
+        # Update hypothesis quality trends
+        if not hasattr(self, 'hypothesis_quality_trends'):
+            self.hypothesis_quality_trends = {
+                'avg_confidence_over_time': [],
+                'false_positive_rate_over_time': []
+            }
+        
+        # Calculate current metrics
+        if self.hypothesis_metrics:
+            total_hypotheses = sum(m.total_generated for m in self.hypothesis_metrics.values())
+            total_verified = sum(m.verified_count for m in self.hypothesis_metrics.values())
+            
+            if total_hypotheses > 0:
+                avg_confidence = sum(
+                    m.avg_final_confidence * m.total_generated 
+                    for m in self.hypothesis_metrics.values()
+                ) / total_hypotheses
+                
+                fp_rate = 1 - (total_verified / total_hypotheses)
+                
+                self.hypothesis_quality_trends['avg_confidence_over_time'].append(avg_confidence)
+                self.hypothesis_quality_trends['false_positive_rate_over_time'].append(fp_rate)
+        
+        # Save to disk
+        self.save_database()
+    
+    def get_adaptive_metrics(self) -> Dict[str, Any]:
+        """
+        Get comprehensive adaptive learning metrics
+        NEW: Returns all adaptive learning data
+        """
+        return {
+            'prompt_performance': self.prompt_performance,
+            'verification_weights': self.verification_weights,
+            'hypothesis_quality_trends': getattr(self, 'hypothesis_quality_trends', {}),
+            'user_feedback': {
+                'total_feedback': len(self.user_feedback_log),
+                'recent_feedback': self.user_feedback_log[-10:] if self.user_feedback_log else []
+            }
+        }
 
 
 # Global learning database instance
