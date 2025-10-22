@@ -1009,13 +1009,13 @@
   "hypothesis_metrics": {
     "reentrancy": {
       "hypothesis_type": "reentrancy",
-      "total_generated": 2,
-      "verified_count": 0,
-      "rejected_count": 2,
-      "avg_initial_confidence": 0.8,
-      "avg_final_confidence": 0.6999999999999998,
-      "success_rate": 0.0,
-      "last_updated": "2025-10-22T00:26:12.383819"
+      "total_generated": 4,
+      "verified_count": 1,
+      "rejected_count": 3,
+      "avg_initial_confidence": 0.65,
+      "avg_final_confidence": 0.75,
+      "success_rate": 0.25,
+      "last_updated": "2025-10-22T00:52:35.133131"
     },
     "cross_contract": {
       "hypothesis_type": "cross_contract",
@@ -1028,7 +1028,23 @@
       "last_updated": "2025-10-22T00:26:12.383825"
     }
   },
-  "prompt_effectiveness": {},
-  "last_updated": "2025-10-22T00:26:12.384261",
+  "prompt_effectiveness": {
+    "divergent_exploration": {
+      "avg_success_rate": 0.5,
+      "avg_fp_rate": 0.0,
+      "runs": 1
+    },
+    "technical_validation": {
+      "avg_success_rate": 0.5,
+      "avg_fp_rate": 0.0,
+      "runs": 1
+    },
+    "exploit_synthesis": {
+      "avg_success_rate": 0.5,
+      "avg_fp_rate": 0.0,
+      "runs": 1
+    }
+  },
+  "last_updated": "2025-10-22T00:52:35.137764",
   "total_scans": 7
 }
