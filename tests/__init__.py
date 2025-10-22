@@ -1,3 +1,1 @@
-"""
-Tests for Advanced Web3 Bug Hunter
-"""
+# Tests for Advanced Web3 Bug Hunter

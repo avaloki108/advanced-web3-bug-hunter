@@ -298,15 +298,107 @@ class PersistentLearningDB:
             'initial_accuracy': initial_accuracy,
             'improvement_percentage': improvement * 100,
             'total_patterns_learned': len(self.pattern_effectiveness),
-            'top_patterns': [
-                {
-                    'name': p.pattern_name,
-                    'confidence': p.confidence_score,
-                    'detections': p.times_detected
-                }
-                for p in top_patterns
-            ],
-            'vulnerability_types_known': len(self.vulnerability_corpus)
+            'top_patterns': [p.pattern_name for p in top_patterns],
+            'hypothesis_metrics': self._get_hypothesis_metrics_summary()
+        }
+
+    def record_hypothesis_quality(self,
+                                  hypothesis_type: str,
+                                  generated_count: int,
+                                  verified_count: int,
+                                  rejected_count: int,
+                                  avg_initial_confidence: float,
+                                  avg_final_confidence: float):
+        """
+        Record quality metrics for AI-generated hypotheses
+        Used by prompt chain orchestrator
+        
+        Args:
+            hypothesis_type: Type of hypothesis (e.g., 'flash_loan_attack', 'reentrancy')
+            generated_count: Total hypotheses generated
+            verified_count: Number verified as plausible
+            rejected_count: Number rejected as implausible
+            avg_initial_confidence: Average initial confidence score
+            avg_final_confidence: Average final confidence after validation
+        """
+        if hypothesis_type not in self.hypothesis_metrics:
+            self.hypothesis_metrics[hypothesis_type] = HypothesisQualityMetrics(
+                hypothesis_type=hypothesis_type,
+                total_generated=0,
+                verified_count=0,
+                rejected_count=0,
+                avg_initial_confidence=0.0,
+                avg_final_confidence=0.0,
+                success_rate=0.0,
+                last_updated=datetime.now().isoformat()
+            )
+        
+        metrics = self.hypothesis_metrics[hypothesis_type]
+        
+        # Update counts
+        metrics.total_generated += generated_count
+        metrics.verified_count += verified_count
+        metrics.rejected_count += rejected_count
+        
+        # Update confidence averages (weighted)
+        total_prev = metrics.total_generated - generated_count
+        if total_prev > 0:
+            metrics.avg_initial_confidence = (
+                (metrics.avg_initial_confidence * total_prev + avg_initial_confidence * generated_count) /
+                metrics.total_generated
+            )
+            metrics.avg_final_confidence = (
+                (metrics.avg_final_confidence * total_prev + avg_final_confidence * generated_count) /
+                metrics.total_generated
+            )
+        else:
+            metrics.avg_initial_confidence = avg_initial_confidence
+            metrics.avg_final_confidence = avg_final_confidence
+        
+        # Calculate success rate
+        total_processed = metrics.verified_count + metrics.rejected_count
+        metrics.success_rate = metrics.verified_count / total_processed if total_processed > 0 else 0.0
+        metrics.last_updated = datetime.now().isoformat()
+        
+        # Save to disk
+        self.save_database()
+
+    def get_learned_patterns_text(self, max_patterns: int = 10) -> List[str]:
+        """
+        Get learned patterns as text descriptions for prompt enhancement
+        
+        Args:
+            max_patterns: Maximum number of patterns to return
+            
+        Returns:
+            List of pattern descriptions
+        """
+        patterns = self.get_learned_patterns_for_analysis()
+        pattern_texts = []
+        
+        for pattern in patterns[:max_patterns]:
+            text = f"{pattern['name']} (confidence: {pattern['confidence']:.2f}, detected {pattern['times_detected']} times)"
+            pattern_texts.append(text)
+        
+        return pattern_texts
+
+    def _get_hypothesis_metrics_summary(self) -> Dict[str, Any]:
+        """Get summary of hypothesis quality metrics"""
+        if not self.hypothesis_metrics:
+            return {'status': 'no_data'}
+        
+        total_generated = sum(m.total_generated for m in self.hypothesis_metrics.values())
+        total_verified = sum(m.verified_count for m in self.hypothesis_metrics.values())
+        total_rejected = sum(m.rejected_count for m in self.hypothesis_metrics.values())
+        
+        avg_success_rate = sum(m.success_rate for m in self.hypothesis_metrics.values()) / len(self.hypothesis_metrics)
+        
+        return {
+            'total_hypotheses_generated': total_generated,
+            'total_verified': total_verified,
+            'total_rejected': total_rejected,
+            'overall_success_rate': avg_success_rate,
+            'hypothesis_types_tracked': len(self.hypothesis_metrics)
         }
         
     def get_enhanced_llm_prompt(self) -> str:
