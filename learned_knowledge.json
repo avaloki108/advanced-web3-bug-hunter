@@ -798,6 +798,17 @@
       "accuracy_score": 1.0,
       "processing_time": 0.013763,
       "llm_insights": []
+    },
+    {
+      "id": "SCAN-20251022-002612-486ac457",
+      "timestamp": "2025-10-22T00:26:12.383846",
+      "contract_hash": "486ac4576c95ba08",
+      "vulnerabilities_found": [],
+      "false_positives_marked": [],
+      "patterns_extracted": [],
+      "accuracy_score": 1.0,
+      "processing_time": 0.000392,
+      "llm_insights": []
     }
   ],
   "pattern_effectiveness": {
@@ -992,8 +1003,32 @@
     1.0,
     1.0,
     1.0,
+    1.0,
     1.0
   ],
-  "last_updated": "2025-10-21T12:45:04.613576",
-  "total_scans": 6
+  "hypothesis_metrics": {
+    "reentrancy": {
+      "hypothesis_type": "reentrancy",
+      "total_generated": 2,
+      "verified_count": 0,
+      "rejected_count": 2,
+      "avg_initial_confidence": 0.8,
+      "avg_final_confidence": 0.6999999999999998,
+      "success_rate": 0.0,
+      "last_updated": "2025-10-22T00:26:12.383819"
+    },
+    "cross_contract": {
+      "hypothesis_type": "cross_contract",
+      "total_generated": 1,
+      "verified_count": 0,
+      "rejected_count": 1,
+      "avg_initial_confidence": 0.5,
+      "avg_final_confidence": 0.5,
+      "success_rate": 0.0,
+      "last_updated": "2025-10-22T00:26:12.383825"
+    }
+  },
+  "prompt_effectiveness": {},
+  "last_updated": "2025-10-22T00:26:12.384261",
+  "total_scans": 7
 }
