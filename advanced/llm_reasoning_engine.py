@@ -26,7 +26,14 @@ try:
 except ImportError:
     HAS_PROMPT_CHAINING = False
 
-
+try:
+    from .langgraph_orchestrator import LangGraphOrchestrator, LangGraphExecutionResult, AgentRun
+    HAS_LANGGRAPH = True
+except ImportError:
+    HAS_LANGGRAPH = False
+    class AgentRun:
+        """Minimal stub for AgentRun when LangGraph is unavailable."""
+        pass
 class ReasoningMode(Enum):
     ADVERSARIAL = "adversarial"  # Think like an attacker
     DEFENSIVE = "defensive"  # Think like an auditor
@@ -72,6 +79,14 @@ class AdvancedLLMReasoner:
         if HAS_PROMPT_CHAINING:
             self.prompt_chain_orchestrator = PromptChainOrchestrator(llm_client=self)
 
+        # Initialize LangGraph orchestrator for DAG-based reasoning if available
+        self.langgraph_orchestrator: Optional[LangGraphOrchestrator] = None
+        if HAS_LANGGRAPH:
+            try:
+                self.langgraph_orchestrator = LangGraphOrchestrator(llm_client=self)
+            except Exception as exc:
+                print(f"LangGraph orchestrator initialization failed: {exc}")
+
     def analyze_contract_multi_agent(self,
                                     contract_code: str,
                                     static_analysis_results: Dict[str, Any],
@@ -79,11 +94,11 @@ class AdvancedLLMReasoner:
                                     use_ai_hypothesis: bool = True) -> List[ReasoningResult]:
         """
         Run multiple reasoning agents in parallel for comprehensive analysis
-        
+
         Args:
             use_ai_hypothesis: If True and available, use AI hypothesis system for enhanced analysis
         """
-        results = []
+        results: List[ReasoningResult] = []
 
         # Enhanced: AI Hypothesis System (if available)
         if use_ai_hypothesis and self.ai_hypothesis_system:
@@ -95,34 +110,162 @@ class AdvancedLLMReasoner:
                     static_analysis_results=static_analysis_results,
                     generate_pocs=False
                 )
-                
+
                 # Convert hypothesis findings to reasoning results
                 hypothesis_result = self._convert_hypothesis_to_reasoning(hypothesis_report)
                 results.append(hypothesis_result)
             except Exception as e:
                 print(f"AI Hypothesis System error: {e}")
 
-        # Agent 1: Adversarial Reasoning
-        results.append(self._adversarial_reasoning(contract_code, static_analysis_results))
+        if self.langgraph_orchestrator:
+            try:
+                execution: LangGraphExecutionResult = self.langgraph_orchestrator.run(
+                    contract_code=contract_code,
+                    static_analysis_results=static_analysis_results,
+                    contract_type=contract_type,
+                )
+                results.extend(self._convert_langgraph_execution(execution))
+                self.reasoning_history.extend(results)
+                return results
+            except Exception as exc:
+                print(f"LangGraph orchestrator error: {exc}. Falling back to legacy pipeline.")
 
-        # Agent 2: Economic Analysis
-        results.append(self._economic_reasoning(contract_code, contract_type))
-
-        # Agent 3: Composability Analysis
-        results.append(self._composability_reasoning(contract_code))
-
-        # Agent 4: Formal Verification
-        results.append(self._formal_reasoning(contract_code))
-
-        # Agent 5: Pattern Matching
-        results.append(self._pattern_reasoning(contract_code, static_analysis_results))
-
-        # Synthesize results
-        synthesized = self._synthesize_findings(results)
-        results.append(synthesized)
+        # Fallback to the legacy sequential pipeline if LangGraph is unavailable or fails
+        legacy_results = self._legacy_multi_agent(
+            contract_code,
+            static_analysis_results,
+            contract_type,
+            prior_results=results,
+        )
+        results.extend(legacy_results)
 
         self.reasoning_history.extend(results)
         return results
+
+    def _legacy_multi_agent(self,
+                             contract_code: str,
+                             static_analysis_results: Dict[str, Any],
+                             contract_type: str,
+                             prior_results: Optional[List[ReasoningResult]] = None) -> List[ReasoningResult]:
+        """Retain the legacy sequential pipeline as a fallback path."""
+
+        legacy_results: List[ReasoningResult] = []
+
+        legacy_results.append(self._adversarial_reasoning(contract_code, static_analysis_results))
+        legacy_results.append(self._economic_reasoning(contract_code, contract_type))
+        legacy_results.append(self._composability_reasoning(contract_code))
+        legacy_results.append(self._formal_reasoning(contract_code))
+        legacy_results.append(self._pattern_reasoning(contract_code, static_analysis_results))
+
+        synthesis_inputs = (prior_results or []) + legacy_results
+        legacy_results.append(self._synthesize_findings(synthesis_inputs))
+
+        return legacy_results
+
+    def _convert_langgraph_execution(self, execution: LangGraphExecutionResult) -> List[ReasoningResult]:
+        """Convert the LangGraph execution artefacts into ReasoningResult entries."""
+
+        mode_map = {
+            "hunter": ReasoningMode.ADVERSARIAL,
+            "analogical_reasoner": ReasoningMode.COMPOSABILITY,
+            "skeptical_validator": ReasoningMode.DEFENSIVE,
+            "exploit_synthesizer": ReasoningMode.ADVERSARIAL,
+            "self_evaluation": ReasoningMode.FORMAL,
+        }
+
+        results: List[ReasoningResult] = []
+
+        for run in execution.agent_runs:
+            mode = mode_map.get(run.name, ReasoningMode.ADVERSARIAL)
+            findings = self._normalize_findings_from_parsed(run.parsed_response, run.raw_response)
+            attack_scenarios = self._extract_attack_scenarios_from_run(run)
+            confidence = self._extract_confidence_from_parsed(run.parsed_response)
+            reasoning_chain = [run.role]
+            if isinstance(run.raw_response, str):
+                stripped_response = run.raw_response.strip()
+                if stripped_response:
+                    reasoning_chain.append(stripped_response)
+
+            result = ReasoningResult(
+                mode=mode,
+                findings=findings,
+                attack_scenarios=attack_scenarios,
+                property_tests=self._extract_property_tests_from_parsed(run.parsed_response),
+                confidence=confidence,
+                reasoning_chain=reasoning_chain,
+                references=[],
+            )
+            results.append(result)
+
+        final_assessment = execution.shared_state.get("final_assessment")
+        if isinstance(final_assessment, dict) and final_assessment:
+            results.append(
+                ReasoningResult(
+                    mode=ReasoningMode.DEFENSIVE,
+                    findings=[final_assessment],
+                    attack_scenarios=self._stringify_attack_scenarios(
+                        execution.shared_state.get("exploit_scenarios", [])
+                    ),
+                    property_tests=[],
+                    confidence=float(final_assessment.get("confidence", 0.5)),
+                    reasoning_chain=[final_assessment.get("summary", "").strip()],
+                    references=[],
+                )
+            )
+
+        return results
+
+    def _normalize_findings_from_parsed(self, parsed: Any, raw: Any) -> List[Dict[str, Any]]:
+        """Normalize parsed agent payloads into a list of findings dictionaries."""
+
+        if isinstance(parsed, list):
+            return [item if isinstance(item, dict) else {"summary": item} for item in parsed]
+        if isinstance(parsed, dict):
+            for key in ["hypotheses", "validated", "findings", "analysis"]:
+                value = parsed.get(key)
+                if isinstance(value, list):
+                    return [item if isinstance(item, dict) else {"summary": item} for item in value]
+            return [parsed]
+        if isinstance(raw, str) and raw.strip():
+            return [{"summary": raw.strip()}]
+        return []
+
+    def _extract_attack_scenarios_from_run(self, run: AgentRun) -> List[str]:
+        parsed = run.parsed_response
+        if isinstance(parsed, dict):
+            for key in ["scenarios", "exploits", "results"]:
+                value = parsed.get(key)
+                if isinstance(value, list):
+                    return self._stringify_attack_scenarios(value)
+        if isinstance(parsed, list) and run.name == "exploit_synthesizer":
+            return self._stringify_attack_scenarios(parsed)
+        return []
+
+    def _extract_property_tests_from_parsed(self, parsed: Any) -> List[str]:
+        if isinstance(parsed, dict):
+            tests = parsed.get("property_tests") or parsed.get("tests")
+            if isinstance(tests, list):
+                return [str(item) for item in tests]
+        return []
+
+    def _extract_confidence_from_parsed(self, parsed: Any) -> float:
+        if isinstance(parsed, dict):
+            confidence = parsed.get("confidence")
+            if isinstance(confidence, (int, float)):
+                return float(confidence)
+        return 0.6
+
+    def _stringify_attack_scenarios(self, scenarios: List[Any]) -> List[str]:
+        stringified: List[str] = []
+        for scenario in scenarios:
+            if isinstance(scenario, str):
+                stringified.append(scenario)
+            else:
+                try:
+                    stringified.append(json.dumps(scenario))
+                except (TypeError, ValueError):
+                    stringified.append(str(scenario))
+        return stringified
 
     def _adversarial_reasoning(self,
                               contract_code: str,
