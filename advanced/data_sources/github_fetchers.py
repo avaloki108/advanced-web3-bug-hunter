@@ -170,7 +170,9 @@ class SmartBugsWildFetcher(GitHubSourceFetcher):
 
             message = details.get("commit", {}).get("message", "SmartBugs Wild update")
             title = message.splitlines()[0]
-            commit_date = details.get("commit", {}).get("author", {}).get("date", datetime.utcnow().isoformat())
+            commit_date = details.get("commit", {}).get("author", {}).get("date")
+            if not commit_date:
+                LOGGER.warning("Missing commit date for smartbugs commit %s", sha)
             record = HackRecord(
                 uid=f"smartbugs-wild-{sha}",
                 title=f"SmartBugs Wild dataset update: {title}",
