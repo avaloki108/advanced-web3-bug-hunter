@@ -3,7 +3,7 @@ Data source records module for handling GitHub data.
 """
 
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 
 class GitHubRecord:
@@ -47,22 +47,31 @@ def fetch_github_data(endpoint: str) -> List[Dict[str, Any]]:
     return []
 
 
-def parse_github_datetime(dt_string: str) -> datetime:
+def parse_github_datetime(dt_string: Optional[str]) -> datetime:
     """
     Parse a GitHub datetime string into a datetime object.
     
     Args:
-        dt_string: GitHub datetime string in ISO 8601 format
+        dt_string: GitHub datetime string in ISO 8601 format, or None
         
     Returns:
         Parsed datetime object
+        
+    Raises:
+        ValueError: If dt_string is None, empty, or invalid format
     """
+    # Validate input - check for None or empty string
+    if dt_string is None or dt_string == '':
+        raise ValueError("Missing GitHub datetime string")
+    
     try:
         # Try to parse the datetime string
         return datetime.fromisoformat(dt_string.replace('Z', '+00:00'))
-    except (ValueError, AttributeError):
-        # Silently return current time as fallback
-        return datetime.now()
+    except (ValueError, AttributeError) as e:
+        # Raise clear error with original input and underlying error
+        raise ValueError(
+            f"Failed to parse GitHub datetime string '{dt_string}': {str(e)}"
+        ) from e
 
 
 def process_records(data: List[Dict[str, Any]]) -> RecordCollection:
