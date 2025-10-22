@@ -31,9 +31,9 @@ try:
     HAS_LANGGRAPH = True
 except ImportError:
     HAS_LANGGRAPH = False
-    AgentRun = Any  # type: ignore
-
-
+    class AgentRun:
+        """Minimal stub for AgentRun when LangGraph is unavailable."""
+        pass
 class ReasoningMode(Enum):
     ADVERSARIAL = "adversarial"  # Think like an attacker
     DEFENSIVE = "defensive"  # Think like an auditor
