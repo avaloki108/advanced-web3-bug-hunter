@@ -173,9 +173,16 @@ class GitHubHackFetcher:
                 commit_info = details.get('commit', {})
                 message = commit_info.get('message', 'No message')
                 
-                # PROBLEMATIC CODE: This is where the issue occurs (lines 171-181)
-                # The code doesn't handle missing dates properly
+                # Try to get commit date, first from author, then from committer
                 commit_date = commit_info.get('author', {}).get('date')
+                if commit_date is None:
+                    commit_date = commit_info.get('committer', {}).get('date')
+                
+                # Skip this commit if both dates are missing
+                if commit_date is None:
+                    logger.warning(f"Skipping commit {sha}: both author and committer dates are missing")
+                    continue
+                
                 parsed_date = parse_github_datetime(commit_date)
                 
                 # Create HackRecord
