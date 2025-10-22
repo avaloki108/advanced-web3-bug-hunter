@@ -6,7 +6,7 @@ Combines GPT-4, Claude, and local models for comprehensive analysis
 Enhanced with AI Hypothesis System integration for improved vulnerability discovery
 """
 
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
 from enum import Enum
 import json
@@ -15,6 +15,7 @@ import os
 # Import AI hypothesis system components (optional)
 try:
     from .ai_hypothesis_system import AIHypothesisSystem
+
     HAS_AI_HYPOTHESIS = True
 except ImportError:
     HAS_AI_HYPOTHESIS = False
@@ -22,6 +23,7 @@ except ImportError:
 # Import prompt chaining components (optional)
 try:
     from .prompt_chaining import PromptChainOrchestrator, PromptChainResult
+
     HAS_PROMPT_CHAINING = True
 except ImportError:
     HAS_PROMPT_CHAINING = False
@@ -45,6 +47,7 @@ class ReasoningMode(Enum):
 @dataclass
 class ReasoningResult:
     """Result from LLM reasoning"""
+
     mode: ReasoningMode
     findings: List[Dict[str, Any]]
     attack_scenarios: List[str]
@@ -60,25 +63,28 @@ class AdvancedLLMReasoner:
     Uses chain-of-thought, adversarial thinking, and domain expertise
     """
 
-    def __init__(self, openai_key: Optional[str] = None, anthropic_key: Optional[str] = None):
+    def __init__(
+        self, openai_key: Optional[str] = None, anthropic_key: Optional[str] = None
+    ):
         self.openai_key = openai_key or os.getenv("OPENAI_API_KEY")
         self.anthropic_key = anthropic_key or os.getenv("ANTHROPIC_API_KEY")
         self.reasoning_history: List[ReasoningResult] = []
-        
+
         # Initialize AI hypothesis system if available
-        self.ai_hypothesis_system = None
+        self.ai_hypothesis_system: Optional[AIHypothesisSystem] = None
         if HAS_AI_HYPOTHESIS:
             self.ai_hypothesis_system = AIHypothesisSystem(
                 llm_client=self,
                 enable_poc_generation=False,  # Disable for compatibility
-                enable_learning=True
+                enable_learning=True,
             )
-        
+
         # Initialize prompt chain orchestrator if available
-        self.prompt_chain_orchestrator = None
+        self.prompt_chain_orchestrator: Optional[PromptChainOrchestrator] = None
         if HAS_PROMPT_CHAINING:
             self.prompt_chain_orchestrator = PromptChainOrchestrator(llm_client=self)
 
+<<<<<<< Updated upstream
         # Initialize LangGraph orchestrator for DAG-based reasoning if available
         self.langgraph_orchestrator: Optional[LangGraphOrchestrator] = None
         if HAS_LANGGRAPH:
@@ -92,6 +98,15 @@ class AdvancedLLMReasoner:
                                     static_analysis_results: Dict[str, Any],
                                     contract_type: str = "unknown",
                                     use_ai_hypothesis: bool = True) -> List[ReasoningResult]:
+=======
+    def analyze_contract_multi_agent(
+        self,
+        contract_code: str,
+        static_analysis_results: Dict[str, Any],
+        contract_type: str = "unknown",
+        use_ai_hypothesis: bool = True,
+    ) -> List[ReasoningResult]:
+>>>>>>> Stashed changes
         """
         Run multiple reasoning agents in parallel for comprehensive analysis
 
@@ -108,15 +123,18 @@ class AdvancedLLMReasoner:
                     contract_name=contract_type,
                     contract_type=contract_type,
                     static_analysis_results=static_analysis_results,
-                    generate_pocs=False
+                    generate_pocs=False,
                 )
 
                 # Convert hypothesis findings to reasoning results
-                hypothesis_result = self._convert_hypothesis_to_reasoning(hypothesis_report)
+                hypothesis_result = self._convert_hypothesis_to_reasoning(
+                    hypothesis_report
+                )
                 results.append(hypothesis_result)
             except Exception as e:
                 print(f"AI Hypothesis System error: {e}")
 
+<<<<<<< Updated upstream
         if self.langgraph_orchestrator:
             try:
                 execution: LangGraphExecutionResult = self.langgraph_orchestrator.run(
@@ -129,6 +147,12 @@ class AdvancedLLMReasoner:
                 return results
             except Exception as exc:
                 print(f"LangGraph orchestrator error: {exc}. Falling back to legacy pipeline.")
+=======
+        # Agent 1: Adversarial Reasoning
+        results.append(
+            self._adversarial_reasoning(contract_code, static_analysis_results)
+        )
+>>>>>>> Stashed changes
 
         # Fallback to the legacy sequential pipeline if LangGraph is unavailable or fails
         legacy_results = self._legacy_multi_agent(
@@ -142,6 +166,7 @@ class AdvancedLLMReasoner:
         self.reasoning_history.extend(results)
         return results
 
+<<<<<<< Updated upstream
     def _legacy_multi_agent(self,
                              contract_code: str,
                              static_analysis_results: Dict[str, Any],
@@ -270,6 +295,11 @@ class AdvancedLLMReasoner:
     def _adversarial_reasoning(self,
                               contract_code: str,
                               static_results: Dict[str, Any]) -> ReasoningResult:
+=======
+    def _adversarial_reasoning(
+        self, contract_code: str, static_results: Dict[str, Any]
+    ) -> ReasoningResult:
+>>>>>>> Stashed changes
         """
         Think like an attacker - find novel exploit paths
         """
@@ -286,10 +316,12 @@ class AdvancedLLMReasoner:
             attack_scenarios=self._extract_attack_scenarios(response),
             property_tests=[],
             confidence=0.75,
-            reasoning_chain=self._extract_reasoning_chain(response)
+            reasoning_chain=self._extract_reasoning_chain(response),
         )
 
-    def query_llm(self, prompt: str, model: str = "gpt-4", temperature: float = 0.7) -> str:
+    def query_llm(
+        self, prompt: str, model: str = "gpt-4", temperature: float = 0.7
+    ) -> str:
         """
         Query LLM with proper error handling
         Supports OpenAI, Anthropic (Claude), and XAI (Grok)
@@ -298,47 +330,51 @@ class AdvancedLLMReasoner:
             # Try OpenAI first
             if self.openai_key:
                 from openai import OpenAI
+
                 client = OpenAI(api_key=self.openai_key)
                 response = client.chat.completions.create(
                     model=model,
                     messages=[{"role": "user", "content": prompt}],
                     max_tokens=2000,
-                    temperature=temperature
+                    temperature=temperature,
                 )
                 return response.choices[0].message.content
-                
+
             # Try Anthropic/Claude
             elif self.anthropic_key:
                 import anthropic
+
                 client = anthropic.Anthropic(api_key=self.anthropic_key)
                 message = client.messages.create(
                     model="claude-3-opus-20240229",
                     max_tokens=2000,
-                    messages=[{"role": "user", "content": prompt}]
+                    messages=[{"role": "user", "content": prompt}],
                 )
                 return message.content[0].text
-                
+
             # Try XAI/Grok
             elif os.getenv("XAI_API_KEY"):
                 from openai import OpenAI
+
                 client = OpenAI(
-                    api_key=os.getenv("XAI_API_KEY"),
-                    base_url="https://api.x.ai/v1"
+                    api_key=os.getenv("XAI_API_KEY"), base_url="https://api.x.ai/v1"
                 )
                 response = client.chat.completions.create(
                     model="grok-beta",
                     messages=[{"role": "user", "content": prompt}],
                     max_tokens=2000,
-                    temperature=temperature
+                    temperature=temperature,
                 )
                 return response.choices[0].message.content
             else:
                 return "LLM API key not configured. Set OPENAI_API_KEY, ANTHROPIC_API_KEY, or XAI_API_KEY."
-                
+
         except Exception as e:
             return f"LLM Error: {str(e)}"
 
-    def _build_adversarial_prompt(self, contract_code: str, static_results: Dict[str, Any]) -> str:
+    def _build_adversarial_prompt(
+        self, contract_code: str, static_results: Dict[str, Any]
+    ) -> str:
         """Build prompt for adversarial reasoning"""
         return f"""You are an expert Web3 security researcher and ethical hacker.
 Your goal is to find novel vulnerabilities by thinking like an attacker.
@@ -383,7 +419,9 @@ For each potential vulnerability, provide:
 Think deeply and creatively. Focus on logic flaws that automated tools miss.
 """
 
-    def _economic_reasoning(self, contract_code: str, contract_type: str) -> ReasoningResult:
+    def _economic_reasoning(
+        self, contract_code: str, contract_type: str
+    ) -> ReasoningResult:
         """Analyze economic incentives and game theory"""
         prompt = f"""You are a Web3 economic security expert.
 Analyze this {contract_type} contract for economic vulnerabilities and misaligned incentives.
@@ -431,7 +469,7 @@ Provide:
             attack_scenarios=self._extract_attack_scenarios(response),
             property_tests=[],
             confidence=0.70,
-            reasoning_chain=self._extract_reasoning_chain(response)
+            reasoning_chain=self._extract_reasoning_chain(response),
         )
 
     def _composability_reasoning(self, contract_code: str) -> ReasoningResult:
@@ -476,7 +514,7 @@ For each risk:
             attack_scenarios=self._extract_attack_scenarios(response),
             property_tests=[],
             confidence=0.65,
-            reasoning_chain=self._extract_reasoning_chain(response)
+            reasoning_chain=self._extract_reasoning_chain(response),
         )
 
     def _formal_reasoning(self, contract_code: str) -> ReasoningResult:
@@ -520,12 +558,12 @@ Output formal properties suitable for Echidna, Certora, or manual testing.
             attack_scenarios=[],
             property_tests=self._extract_property_tests(response),
             confidence=0.80,
-            reasoning_chain=self._extract_reasoning_chain(response)
+            reasoning_chain=self._extract_reasoning_chain(response),
         )
 
-    def _pattern_reasoning(self,
-                          contract_code: str,
-                          static_results: Dict[str, Any]) -> ReasoningResult:
+    def _pattern_reasoning(
+        self, contract_code: str, static_results: Dict[str, Any]
+    ) -> ReasoningResult:
         """Match against known vulnerability patterns"""
         prompt = f"""You are a vulnerability pattern expert.
 Compare this contract against known vulnerability patterns and historical exploits.
@@ -577,7 +615,7 @@ For each pattern match:
             property_tests=[],
             confidence=0.85,
             reasoning_chain=self._extract_reasoning_chain(response),
-            references=self._extract_references(response)
+            references=self._extract_references(response),
         )
 
     def _synthesize_findings(self, results: List[ReasoningResult]) -> ReasoningResult:
@@ -593,7 +631,9 @@ For each pattern match:
 
         # Remove duplicates and rank by confidence
         unique_findings = self._deduplicate_findings(all_findings)
-        ranked_findings = sorted(unique_findings, key=lambda x: x.get('confidence', 0), reverse=True)
+        ranked_findings = sorted(
+            unique_findings, key=lambda x: x.get("confidence", 0), reverse=True
+        )
 
         return ReasoningResult(
             mode=ReasoningMode.DEFENSIVE,
@@ -601,16 +641,18 @@ For each pattern match:
             attack_scenarios=list(set(all_scenarios)),
             property_tests=list(set(all_properties)),
             confidence=0.80,
-            reasoning_chain=["Synthesized from multiple reasoning agents"]
+            reasoning_chain=["Synthesized from multiple reasoning agents"],
         )
 
-    def _call_llm(self, prompt: str, model: str = "gpt-4-turbo", temperature: float = 0.7) -> str:
+    def _call_llm(
+        self, prompt: str, model: str = "gpt-4-turbo", temperature: float = 0.7
+    ) -> str:
         """
         Call LLM API (OpenAI, Anthropic, or local)
         In production, this would make actual API calls
         """
         # Placeholder - in production, this would call actual LLM APIs
-        mock_response = f"""
+        mock_response = """
         MOCK LLM RESPONSE (Replace with actual API call)
 
         Based on analysis of the provided contract:
@@ -649,22 +691,26 @@ For each pattern match:
 
         # Extract findings from response (simplified)
         if "reentrancy" in response.lower():
-            findings.append({
-                "type": "reentrancy",
-                "severity": "high",
-                "confidence": 0.8,
-                "description": "Potential reentrancy vulnerability",
-                "location": "withdraw function"
-            })
+            findings.append(
+                {
+                    "type": "reentrancy",
+                    "severity": "high",
+                    "confidence": 0.8,
+                    "description": "Potential reentrancy vulnerability",
+                    "location": "withdraw function",
+                }
+            )
 
         if "slippage" in response.lower():
-            findings.append({
-                "type": "slippage_missing",
-                "severity": "medium",
-                "confidence": 0.7,
-                "description": "Missing slippage protection",
-                "location": "swap function"
-            })
+            findings.append(
+                {
+                    "type": "slippage_missing",
+                    "severity": "medium",
+                    "confidence": 0.7,
+                    "description": "Missing slippage protection",
+                    "location": "swap function",
+                }
+            )
 
         return findings
 
@@ -685,11 +731,11 @@ For each pattern match:
         scenarios = []
 
         # Simple extraction
-        lines = response.split('\n')
+        lines = response.split("\n")
         for i, line in enumerate(lines):
-            if 'attack' in line.lower() and 'scenario' in line.lower():
+            if "attack" in line.lower() and "scenario" in line.lower():
                 # Collect next few lines
-                scenario = '\n'.join(lines[i:i+5])
+                scenario = "\n".join(lines[i : i + 5])
                 scenarios.append(scenario)
 
         return scenarios
@@ -700,7 +746,8 @@ For each pattern match:
 
         # Extract echidna-style properties
         import re
-        echidna_pattern = r'echidna_\w+.*'
+
+        echidna_pattern = r"echidna_\w+.*"
         properties = re.findall(echidna_pattern, response)
 
         return properties
@@ -709,12 +756,12 @@ For each pattern match:
         """Extract chain of thought reasoning"""
         chains = []
 
-        lines = response.split('\n')
+        lines = response.split("\n")
         for line in lines:
             if line.strip() and (
-                'because' in line.lower() or
-                'therefore' in line.lower() or
-                'this means' in line.lower()
+                "because" in line.lower()
+                or "therefore" in line.lower()
+                or "this means" in line.lower()
             ):
                 chains.append(line.strip())
 
@@ -723,28 +770,28 @@ For each pattern match:
     def _extract_references(self, response: str) -> List[str]:
         """Extract references to known vulnerabilities"""
         import re
-        url_pattern = r'https?://[^\s]+'
+
+        url_pattern = r"https?://[^\s]+"
         refs = re.findall(url_pattern, response)
         return refs
 
-    def _deduplicate_findings(self, findings: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _deduplicate_findings(
+        self, findings: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Remove duplicate findings"""
         seen = set()
         unique = []
 
         for finding in findings:
             # Create fingerprint
-            fingerprint = (
-                finding.get('type', ''),
-                finding.get('location', '')
-            )
+            fingerprint = (finding.get("type", ""), finding.get("location", ""))
 
             if fingerprint not in seen:
                 seen.add(fingerprint)
                 unique.append(finding)
 
         return unique
-    
+
     def _convert_hypothesis_to_reasoning(self, hypothesis_report) -> ReasoningResult:
         """
         Convert AI hypothesis system report to ReasoningResult format
@@ -752,34 +799,38 @@ For each pattern match:
         """
         findings = []
         attack_scenarios = []
-        
+
         # Extract verified vulnerabilities
         for vuln in hypothesis_report.verified_vulnerabilities:
-            findings.append({
-                "type": vuln['type'],
-                "severity": vuln['severity'],
-                "confidence": vuln['confidence'],
-                "description": vuln['description'],
-                "location": ', '.join(vuln.get('affected_functions', []))
-            })
-            
-            if vuln.get('attack_scenario'):
-                attack_scenarios.append(vuln['attack_scenario'])
-        
+            findings.append(
+                {
+                    "type": vuln["type"],
+                    "severity": vuln["severity"],
+                    "confidence": vuln["confidence"],
+                    "description": vuln["description"],
+                    "location": ", ".join(vuln.get("affected_functions", [])),
+                }
+            )
+
+            if vuln.get("attack_scenario"):
+                attack_scenarios.append(vuln["attack_scenario"])
+
         # Extract uncertain findings with lower confidence
         for uncertain in hypothesis_report.uncertain_findings:
-            findings.append({
-                "type": uncertain['type'],
-                "severity": "medium",
-                "confidence": uncertain['confidence'],
-                "description": uncertain['description'],
-                "location": "unknown"
-            })
-        
+            findings.append(
+                {
+                    "type": uncertain["type"],
+                    "severity": "medium",
+                    "confidence": uncertain["confidence"],
+                    "description": uncertain["description"],
+                    "location": "unknown",
+                }
+            )
+
         # Determine overall confidence
-        confidences = [f['confidence'] for f in findings]
+        confidences = [f["confidence"] for f in findings]
         overall_confidence = sum(confidences) / len(confidences) if confidences else 0.0
-        
+
         return ReasoningResult(
             mode=ReasoningMode.ADVERSARIAL,  # AI hypotheses are adversarial in nature
             findings=findings,
@@ -789,14 +840,14 @@ For each pattern match:
             reasoning_chain=[
                 f"Generated {hypothesis_report.hypotheses_generated} hypotheses",
                 f"Verified {len(hypothesis_report.verified_vulnerabilities)} vulnerabilities",
-                f"Confidence improvement: {hypothesis_report.confidence_improvement:+.2f}"
+                f"Confidence improvement: {hypothesis_report.confidence_improvement:+.2f}",
             ],
-            references=[]
+            references=[],
         )
 
-    def generate_fuzzing_harness(self,
-                                contract_code: str,
-                                vulnerabilities: List[Dict[str, Any]]) -> str:
+    def generate_fuzzing_harness(
+        self, contract_code: str, vulnerabilities: List[Dict[str, Any]]
+    ) -> str:
         """Generate targeted fuzzing harness based on LLM findings"""
         prompt = f"""Generate Echidna fuzzing properties to test the following vulnerabilities:
 
@@ -837,16 +888,18 @@ Write for a technical audience (developers and auditors).
         response = self._call_llm(prompt, model="gpt-4-turbo", temperature=0.3)
         return response
 
-    def execute_prompt_chain(self,
-                            contract_code: str,
-                            contract_type: str = "unknown",
-                            static_analysis_results: Optional[Dict[str, Any]] = None,
-                            learned_patterns: Optional[List[str]] = None,
-                            creativity_level: str = "balanced",
-                            use_async: bool = False) -> Optional['PromptChainResult']:
+    def execute_prompt_chain(
+        self,
+        contract_code: str,
+        contract_type: str = "unknown",
+        static_analysis_results: Optional[Dict[str, Any]] = None,
+        learned_patterns: Optional[List[str]] = None,
+        creativity_level: str = "balanced",
+        use_async: bool = False,
+    ) -> Optional["PromptChainResult"]:
         """
         Execute multi-stage prompt chaining for creative hypothesis generation
-        
+
         Args:
             contract_code: Solidity contract code
             contract_type: Type of contract (vault, AMM, bridge, etc.)
@@ -854,14 +907,14 @@ Write for a technical audience (developers and auditors).
             learned_patterns: Patterns from learning database
             creativity_level: conservative, balanced, or aggressive
             use_async: Whether to use async execution (default: False for compatibility)
-            
+
         Returns:
             PromptChainResult with hypotheses and exploit scenarios, or None if not available
         """
         if not self.prompt_chain_orchestrator:
             print("Warning: Prompt chain orchestrator not available")
             return None
-        
+
         try:
             # Use synchronous wrapper by default for compatibility
             result = self.prompt_chain_orchestrator.execute_chain_sync(
@@ -869,36 +922,38 @@ Write for a technical audience (developers and auditors).
                 contract_type=contract_type,
                 static_analysis_results=static_analysis_results,
                 learned_patterns=learned_patterns,
-                creativity_level=creativity_level
+                creativity_level=creativity_level,
             )
-            
+
             return result
         except Exception as e:
             print(f"Error executing prompt chain: {e}")
             return None
 
-    def get_enhanced_llm_prompt(self, 
-                               base_prompt: str,
-                               learned_patterns: Optional[List[str]] = None,
-                               context: Optional[Dict[str, Any]] = None) -> str:
+    def get_enhanced_llm_prompt(
+        self,
+        base_prompt: str,
+        learned_patterns: Optional[List[str]] = None,
+        context: Optional[Dict[str, Any]] = None,
+    ) -> str:
         """
         Enhance LLM prompt with learned patterns from persistent learning DB
-        
+
         Args:
             base_prompt: Original prompt
             learned_patterns: Patterns from learning database
             context: Additional context
-            
+
         Returns:
             Enhanced prompt with learning context
         """
         if not learned_patterns:
             return base_prompt
-        
+
         enhancement = "\n\nLEARNED PATTERNS FROM PREVIOUS SCANS:\n"
         enhancement += "\n".join(f"- {pattern}" for pattern in learned_patterns[:10])
         enhancement += "\n\nConsider these patterns when analyzing the contract.\n"
-        
+
         return base_prompt + enhancement
 
 
@@ -932,25 +987,20 @@ def demonstrate_llm_reasoning():
     """
 
     static_results = {
-        "detectors": {
-            "reentrancy": ["withdraw"],
-            "unprotected_call": ["withdraw"]
-        }
+        "detectors": {"reentrancy": ["withdraw"], "unprotected_call": ["withdraw"]}
     }
 
     print("=== Advanced LLM Reasoning Analysis ===\n")
 
     results = reasoner.analyze_contract_multi_agent(
-        sample_contract,
-        static_results,
-        "vault"
+        sample_contract, static_results, "vault"
     )
 
     for result in results:
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"REASONING MODE: {result.mode.value}")
         print(f"Confidence: {result.confidence}")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
         if result.findings:
             print(f"\nFindings ({len(result.findings)}):")
@@ -968,9 +1018,9 @@ def demonstrate_llm_reasoning():
                 print(f"  {prop}")
 
     # Generate fuzzing harness
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("FUZZING HARNESS GENERATION")
-    print("="*60)
+    print("=" * 60)
 
     harness = reasoner.generate_fuzzing_harness(sample_contract, results[0].findings)
     print(harness[:500])

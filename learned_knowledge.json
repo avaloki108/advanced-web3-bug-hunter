@@ -1685,71 +1685,217 @@
       "accuracy_score": 1.0,
       "processing_time": 11.078622,
       "llm_insights": []
+    },
+    {
+      "id": "SCAN-20251021-232531-3a1a67a2",
+      "timestamp": "2025-10-21T23:25:31.849471",
+      "contract_hash": "3a1a67a2b94134e0",
+      "vulnerabilities_found": [
+        "just_in_time_liquidity_attack",
+        "stale_oracle_price_exploitation",
+        "cross_function_reentrancy",
+        "cross_function_reentrancy",
+        "cross_function_reentrancy",
+        "cross_function_reentrancy",
+        "cross_function_reentrancy",
+        "read_only_reentrancy",
+        "twap_manipulation_short_window",
+        "callback_reentrancy_vulnerability",
+        "multiple_external_calls_no_guard",
+        "multiple_external_calls_no_guard",
+        "multiple_external_calls_no_guard",
+        "multiple_external_calls_no_guard",
+        "potential_backdoor",
+        "unchecked_call_return_value",
+        "unchecked_call_return_value",
+        "unchecked_call_return_value",
+        "Gas Griefing via Return Data"
+      ],
+      "false_positives_marked": [],
+      "patterns_extracted": [
+        {
+          "type": "just_in_time_liquidity_attack",
+          "severity": "medium",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "stale_oracle_price_exploitation",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "cross_function_reentrancy",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "cross_function_reentrancy",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "cross_function_reentrancy",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "cross_function_reentrancy",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "cross_function_reentrancy",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "read_only_reentrancy",
+          "severity": "medium",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "twap_manipulation_short_window",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "callback_reentrancy_vulnerability",
+          "severity": "critical",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "multiple_external_calls_no_guard",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "multiple_external_calls_no_guard",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "multiple_external_calls_no_guard",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "multiple_external_calls_no_guard",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "potential_backdoor",
+          "severity": "critical",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "unchecked_call_return_value",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "unchecked_call_return_value",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "unchecked_call_return_value",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "Gas Griefing via Return Data",
+          "severity": "medium",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        }
+      ],
+      "accuracy_score": 1.0,
+      "processing_time": 10.688048,
+      "llm_insights": []
     }
   ],
   "pattern_effectiveness": {
     "just_in_time_liquidity_attack": {
       "pattern_name": "just_in_time_liquidity_attack",
-      "times_detected": 12,
-      "true_positives": 12,
+      "times_detected": 13,
+      "true_positives": 13,
       "false_positives": 0,
-      "last_updated": "2025-10-22T00:55:49.908768",
+      "last_updated": "2025-10-21T23:25:31.849478",
       "confidence_score": 1.0
     },
     "stale_oracle_price_exploitation": {
       "pattern_name": "stale_oracle_price_exploitation",
-      "times_detected": 14,
-      "true_positives": 14,
+      "times_detected": 15,
+      "true_positives": 15,
       "false_positives": 0,
-      "last_updated": "2025-10-22T00:55:49.908772",
+      "last_updated": "2025-10-21T23:25:31.849480",
       "confidence_score": 1.0
     },
     "cross_function_reentrancy": {
       "pattern_name": "cross_function_reentrancy",
-      "times_detected": 61,
-      "true_positives": 61,
+      "times_detected": 66,
+      "true_positives": 66,
       "false_positives": 0,
-      "last_updated": "2025-10-22T00:55:49.908779",
+      "last_updated": "2025-10-21T23:25:31.849483",
       "confidence_score": 1.0
     },
     "read_only_reentrancy": {
       "pattern_name": "read_only_reentrancy",
-      "times_detected": 11,
-      "true_positives": 11,
+      "times_detected": 12,
+      "true_positives": 12,
       "false_positives": 0,
-      "last_updated": "2025-10-22T00:55:49.908780",
+      "last_updated": "2025-10-21T23:25:31.849485",
       "confidence_score": 1.0
     },
     "twap_manipulation_short_window": {
       "pattern_name": "twap_manipulation_short_window",
-      "times_detected": 9,
-      "true_positives": 9,
+      "times_detected": 10,
+      "true_positives": 10,
       "false_positives": 0,
-      "last_updated": "2025-10-22T00:55:49.908781",
+      "last_updated": "2025-10-21T23:25:31.849486",
       "confidence_score": 1.0
     },
     "multiple_external_calls_no_guard": {
       "pattern_name": "multiple_external_calls_no_guard",
-      "times_detected": 46,
-      "true_positives": 46,
+      "times_detected": 50,
+      "true_positives": 50,
       "false_positives": 0,
-      "last_updated": "2025-10-22T00:55:49.908788",
+      "last_updated": "2025-10-21T23:25:31.849490",
       "confidence_score": 1.0
     },
     "potential_backdoor": {
       "pattern_name": "potential_backdoor",
-      "times_detected": 11,
-      "true_positives": 11,
+      "times_detected": 12,
+      "true_positives": 12,
       "false_positives": 0,
-      "last_updated": "2025-10-22T00:55:49.908789",
+      "last_updated": "2025-10-21T23:25:31.849490",
       "confidence_score": 1.0
     },
     "unchecked_call_return_value": {
       "pattern_name": "unchecked_call_return_value",
-      "times_detected": 32,
-      "true_positives": 32,
+      "times_detected": 35,
+      "true_positives": 35,
       "false_positives": 0,
-      "last_updated": "2025-10-22T00:55:49.908793",
+      "last_updated": "2025-10-21T23:25:31.849492",
       "confidence_score": 1.0
     },
     "flash_loan_governance_attack": {
@@ -1770,10 +1916,10 @@
     },
     "Gas Griefing via Return Data": {
       "pattern_name": "Gas Griefing via Return Data",
-      "times_detected": 9,
-      "true_positives": 9,
+      "times_detected": 10,
+      "true_positives": 10,
       "false_positives": 0,
-      "last_updated": "2025-10-22T00:55:49.908794",
+      "last_updated": "2025-10-21T23:25:31.849492",
       "confidence_score": 1.0
     },
     "flash_loan_oracle_manipulation": {
@@ -1786,10 +1932,10 @@
     },
     "callback_reentrancy_vulnerability": {
       "pattern_name": "callback_reentrancy_vulnerability",
-      "times_detected": 7,
-      "true_positives": 7,
+      "times_detected": 8,
+      "true_positives": 8,
       "false_positives": 0,
-      "last_updated": "2025-10-22T00:55:49.908783",
+      "last_updated": "2025-10-21T23:25:31.849487",
       "confidence_score": 1.0
     },
     "unchecked_erc20_return_values": {
@@ -1890,6 +2036,7 @@
     1.0,
     1.0,
     1.0,
+    1.0,
     1.0
   ],
   "hypothesis_metrics": {
@@ -1914,50 +2061,6 @@
       "last_updated": "2025-10-22T00:26:12.383825"
     }
   },
-  "prompt_effectiveness": {},
-  "prompt_performance": {},
-  "verification_weights": {
-    "weights": {
-      "static": 0.15,
-      "symbolic": 0.25,
-      "dynamic": 0.45,
-      "behavioral": 0.15,
-      "last_updated": "2025-10-22T00:51:46.517621"
-    },
-    "accuracy_history": {
-      "static": [],
-      "symbolic": [],
-      "dynamic": [],
-      "behavioral": []
-    }
-  },
-  "hypothesis_quality_trends": {
-    "avg_confidence_over_time": [
-      0.6333333333333332,
-      0.6333333333333332,
-      0.6333333333333332,
-      0.6333333333333332,
-      0.6333333333333332
-    ],
-    "false_positive_rate_over_time": [
-      1.0,
-      1.0,
-      1.0,
-      1.0,
-      1.0
-    ]
-  },
-  "user_feedback_log": [
-    {
-      "vulnerability_id": "manual-flash_loan_oracle_manipulation",
-      "feedback_type": "confirmed",
-      "timestamp": "2025-10-22T00:51:46.517632",
-      "details": {},
-      "pattern_name": "flash_loan_oracle_manipulation"
-    }
-  ],
-  "last_updated": "2025-10-22T00:51:46.518038",
-  "total_scans": 8
   "prompt_effectiveness": {
     "divergent_exploration": {
       "avg_success_rate": 0.5,
@@ -1975,6 +2078,42 @@
       "runs": 1
     }
   },
-  "last_updated": "2025-10-22T00:55:00.566593",
-  "total_scans": 7
+  "prompt_performance": {},
+  "verification_weights": {
+    "weights": {
+      "static": 0.15,
+      "symbolic": 0.25,
+      "dynamic": 0.45,
+      "behavioral": 0.15,
+      "last_updated": "2025-10-21T23:25:21.173172"
+    },
+    "accuracy_history": {
+      "static": [],
+      "symbolic": [],
+      "dynamic": [],
+      "behavioral": []
+    }
+  },
+  "hypothesis_quality_trends": {
+    "avg_confidence_over_time": [
+      0.6333333333333332,
+      0.6333333333333332,
+      0.6333333333333332,
+      0.6333333333333332,
+      0.6333333333333332,
+      0.7285714285714285
+    ],
+    "false_positive_rate_over_time": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      0.7142857142857143
+    ]
+  },
+  "user_feedback_log": [],
+  "verification_layer_metrics": {},
+  "last_updated": "2025-10-21T23:25:31.852819",
+  "total_scans": 14
 }
