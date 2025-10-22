@@ -1009,13 +1009,13 @@
   "hypothesis_metrics": {
     "reentrancy": {
       "hypothesis_type": "reentrancy",
-      "total_generated": 4,
-      "verified_count": 1,
-      "rejected_count": 3,
-      "avg_initial_confidence": 0.65,
-      "avg_final_confidence": 0.75,
-      "success_rate": 0.25,
-      "last_updated": "2025-10-22T00:52:35.133131"
+      "total_generated": 6,
+      "verified_count": 2,
+      "rejected_count": 4,
+      "avg_initial_confidence": 0.6,
+      "avg_final_confidence": 0.7666666666666666,
+      "success_rate": 0.3333333333333333,
+      "last_updated": "2025-10-22T00:55:00.561951"
     },
     "cross_contract": {
       "hypothesis_type": "cross_contract",
@@ -1045,6 +1045,6 @@
       "runs": 1
     }
   },
-  "last_updated": "2025-10-22T00:52:35.137764",
+  "last_updated": "2025-10-22T00:55:00.566593",
   "total_scans": 7
 }
