@@ -655,12 +655,17 @@ def main():
                 print(f"    Temperature: {perf.get('avg_temperature', 0):.2f}")
         
         if adaptive_metrics.get('verification_weights'):
-            weights = adaptive_metrics['verification_weights'].get('weights', {})
-            if weights:
-                print(f"\n⚖️  Verification Layer Weights:")
-                for layer, weight in weights.items():
-                    print(f"  {layer}: {weight:.2%}")
-                print(f"  Last Updated: {weights.get('last_updated', 'N/A')}")
+            vw_data = adaptive_metrics['verification_weights']
+            weights = vw_data.get('weights', {})
+            if weights and isinstance(weights, dict):
+                # Check if weights is nested (from saved state)
+                if 'static' in weights and isinstance(weights['static'], (int, float)):
+                    print(f"\n⚖️  Verification Layer Weights:")
+                    for layer in ['static', 'symbolic', 'dynamic', 'behavioral']:
+                        if layer in weights:
+                            print(f"  {layer}: {weights[layer]:.2%}")
+                    last_updated = weights.get('last_updated') or vw_data.get('weights', {}).get('last_updated', 'N/A')
+                    print(f"  Last Updated: {last_updated}")
         
         if adaptive_metrics.get('hypothesis_quality_trends'):
             trends = adaptive_metrics['hypothesis_quality_trends']

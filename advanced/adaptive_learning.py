@@ -8,7 +8,6 @@ from dataclasses import dataclass, asdict
 from datetime import datetime
 from collections import defaultdict
 import json
-import numpy as np
 
 
 @dataclass
@@ -186,7 +185,7 @@ class VerificationTuner:
         for layer in ['static', 'symbolic', 'dynamic', 'behavioral']:
             if len(self.layer_accuracy[layer]) > 0:
                 recent_samples = self.layer_accuracy[layer][-recent_window:]
-                recent_accuracy[layer] = np.mean(recent_samples)
+                recent_accuracy[layer] = sum(recent_samples) / len(recent_samples)
             else:
                 recent_accuracy[layer] = 0.5  # Default
         

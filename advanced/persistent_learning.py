@@ -549,8 +549,8 @@ Provide detailed analysis with specific code references.
         if 'user_feedback_log' in adaptive_state:
             self.user_feedback_log = adaptive_state['user_feedback_log']
         
-        # Update hypothesis quality trends
-        if not hasattr(self, 'hypothesis_quality_trends'):
+        # Initialize hypothesis quality trends if not exists
+        if not hasattr(self, 'hypothesis_quality_trends') or not self.hypothesis_quality_trends:
             self.hypothesis_quality_trends = {
                 'avg_confidence_over_time': [],
                 'false_positive_rate_over_time': []

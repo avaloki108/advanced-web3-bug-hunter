@@ -809,32 +809,66 @@
       "accuracy_score": 1.0,
       "processing_time": 0.000392,
       "llm_insights": []
+    },
+    {
+      "id": "SCAN-20251022-005024-e6932894",
+      "timestamp": "2025-10-22T00:50:24.214841",
+      "contract_hash": "e693289466e22604",
+      "vulnerabilities_found": [
+        "just_in_time_liquidity_attack",
+        "multiple_external_calls_no_guard",
+        "Gas Griefing via Return Data"
+      ],
+      "false_positives_marked": [],
+      "patterns_extracted": [
+        {
+          "type": "just_in_time_liquidity_attack",
+          "severity": "medium",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "multiple_external_calls_no_guard",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "Gas Griefing via Return Data",
+          "severity": "medium",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        }
+      ],
+      "accuracy_score": 1.0,
+      "processing_time": 0.009324,
+      "llm_insights": []
     }
   ],
   "pattern_effectiveness": {
     "just_in_time_liquidity_attack": {
       "pattern_name": "just_in_time_liquidity_attack",
-      "times_detected": 6,
-      "true_positives": 6,
+      "times_detected": 7,
+      "true_positives": 7,
       "false_positives": 0,
-      "last_updated": "2025-10-21T12:45:04.613173",
+      "last_updated": "2025-10-22T00:50:24.214848",
       "confidence_score": 1.0
     },
     "stale_oracle_price_exploitation": {
       "pattern_name": "stale_oracle_price_exploitation",
       "times_detected": 8,
-      "true_positives": 8,
+      "true_positives": 9,
       "false_positives": 0,
-      "last_updated": "2025-10-21T12:45:04.613181",
+      "last_updated": "2025-10-22T00:49:39.578782",
       "confidence_score": 1.0
     },
     "cross_function_reentrancy": {
       "pattern_name": "cross_function_reentrancy",
       "times_detected": 31,
       "true_positives": 31,
-      "false_positives": 0,
-      "last_updated": "2025-10-21T12:45:04.613188",
-      "confidence_score": 1.0
+      "false_positives": 1,
+      "last_updated": "2025-10-22T00:49:32.580223",
+      "confidence_score": 0.96875
     },
     "read_only_reentrancy": {
       "pattern_name": "read_only_reentrancy",
@@ -854,10 +888,10 @@
     },
     "multiple_external_calls_no_guard": {
       "pattern_name": "multiple_external_calls_no_guard",
-      "times_detected": 22,
-      "true_positives": 22,
+      "times_detected": 23,
+      "true_positives": 23,
       "false_positives": 0,
-      "last_updated": "2025-10-21T12:45:04.613204",
+      "last_updated": "2025-10-22T00:50:24.214851",
       "confidence_score": 1.0
     },
     "potential_backdoor": {
@@ -894,10 +928,10 @@
     },
     "Gas Griefing via Return Data": {
       "pattern_name": "Gas Griefing via Return Data",
-      "times_detected": 3,
-      "true_positives": 3,
+      "times_detected": 4,
+      "true_positives": 4,
       "false_positives": 0,
-      "last_updated": "2025-10-21T12:44:06.886939",
+      "last_updated": "2025-10-22T00:50:24.214853",
       "confidence_score": 1.0
     },
     "flash_loan_oracle_manipulation": {
@@ -938,7 +972,8 @@
       "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\n/**\n * VULNERABLE VAULT CONTRACT - FOR TESTING ONLY\n * Contains multiple intentional vulnerabilities for demonstration\n * DO NOT USE IN PRODUCT",
       "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\ncontract VulnerableDeFiProtocol {\n    // Existing state\n    mapping(address => uint256) public balances;\n    mapping(address => bool) public is",
       "// Simple test contract with some vulnerabilities\ncontract TestVault {\n    mapping(address => uint256) public balances;\n    \n    function deposit() external payable {\n        balances[msg.sender] += m",
-      "// Test contract with new vulnerability patterns\npragma solidity ^0.8.0;\n\ninterface IERC20 {\n    function transfer(address to, uint256 amount) external returns (bool);\n    function transferFrom(addres"
+      "// Test contract with new vulnerability patterns\npragma solidity ^0.8.0;\n\ninterface IERC20 {\n    function transfer(address to, uint256 amount) external returns (bool);\n    function transferFrom(addres",
+      "// Simple test contract\npragma solidity ^0.8.0;\n\ncontract SimpleTest {\n    mapping(address => uint256) public balances;\n    \n    function deposit() external payable {\n        balances[msg.sender] += m"
     ],
     "stale_oracle_price_exploitation": [
       "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\n/**\n * VULNERABLE VAULT CONTRACT - FOR TESTING ONLY\n * Contains multiple intentional vulnerabilities for demonstration\n * DO NOT USE IN PRODUCT",
@@ -962,7 +997,8 @@
       "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\n/**\n * VULNERABLE VAULT CONTRACT - FOR TESTING ONLY\n * Contains multiple intentional vulnerabilities for demonstration\n * DO NOT USE IN PRODUCT",
       "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\ncontract VulnerableDeFiProtocol {\n    // Existing state\n    mapping(address => uint256) public balances;\n    mapping(address => bool) public is",
       "// Simple test contract with some vulnerabilities\ncontract TestVault {\n    mapping(address => uint256) public balances;\n    \n    function deposit() external payable {\n        balances[msg.sender] += m",
-      "// Test contract with new vulnerability patterns\npragma solidity ^0.8.0;\n\ninterface IERC20 {\n    function transfer(address to, uint256 amount) external returns (bool);\n    function transferFrom(addres"
+      "// Test contract with new vulnerability patterns\npragma solidity ^0.8.0;\n\ninterface IERC20 {\n    function transfer(address to, uint256 amount) external returns (bool);\n    function transferFrom(addres",
+      "// Simple test contract\npragma solidity ^0.8.0;\n\ncontract SimpleTest {\n    mapping(address => uint256) public balances;\n    \n    function deposit() external payable {\n        balances[msg.sender] += m"
     ],
     "potential_backdoor": [
       "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\n/**\n * VULNERABLE VAULT CONTRACT - FOR TESTING ONLY\n * Contains multiple intentional vulnerabilities for demonstration\n * DO NOT USE IN PRODUCT",
@@ -982,7 +1018,8 @@
     ],
     "Gas Griefing via Return Data": [
       "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\n/**\n * VULNERABLE VAULT CONTRACT - FOR TESTING ONLY\n * Contains multiple intentional vulnerabilities for demonstration\n * DO NOT USE IN PRODUCT",
-      "// Simple test contract with some vulnerabilities\ncontract TestVault {\n    mapping(address => uint256) public balances;\n    \n    function deposit() external payable {\n        balances[msg.sender] += m"
+      "// Simple test contract with some vulnerabilities\ncontract TestVault {\n    mapping(address => uint256) public balances;\n    \n    function deposit() external payable {\n        balances[msg.sender] += m",
+      "// Simple test contract\npragma solidity ^0.8.0;\n\ncontract SimpleTest {\n    mapping(address => uint256) public balances;\n    \n    function deposit() external payable {\n        balances[msg.sender] += m"
     ],
     "flash_loan_oracle_manipulation": [
       "// Test contract with new vulnerability patterns\npragma solidity ^0.8.0;\n\ninterface IERC20 {\n    function transfer(address to, uint256 amount) external returns (bool);\n    function transferFrom(addres"
@@ -998,6 +1035,7 @@
     ]
   },
   "accuracy_history": [
+    1.0,
     1.0,
     1.0,
     1.0,
@@ -1029,6 +1067,35 @@
     }
   },
   "prompt_effectiveness": {},
-  "last_updated": "2025-10-22T00:26:12.384261",
-  "total_scans": 7
+  "prompt_performance": {},
+  "verification_weights": {
+    "weights": {
+      "static": 0.15,
+      "symbolic": 0.25,
+      "dynamic": 0.45,
+      "behavioral": 0.15,
+      "last_updated": "2025-10-22T00:50:24.208797"
+    },
+    "accuracy_history": {
+      "static": [],
+      "symbolic": [],
+      "dynamic": [],
+      "behavioral": []
+    }
+  },
+  "hypothesis_quality_trends": {
+    "avg_confidence_over_time": [
+      0.6333333333333332,
+      0.6333333333333332,
+      0.6333333333333332
+    ],
+    "false_positive_rate_over_time": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  "user_feedback_log": [],
+  "last_updated": "2025-10-22T00:50:24.235394",
+  "total_scans": 8
 }
