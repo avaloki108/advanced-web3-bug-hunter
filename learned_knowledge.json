@@ -1779,9 +1779,9 @@
     "flash_loan_oracle_manipulation": {
       "pattern_name": "flash_loan_oracle_manipulation",
       "times_detected": 1,
-      "true_positives": 1,
+      "true_positives": 2,
       "false_positives": 0,
-      "last_updated": "2025-10-21T12:45:04.613193",
+      "last_updated": "2025-10-22T00:51:46.517638",
       "confidence_score": 1.0
     },
     "callback_reentrancy_vulnerability": {
@@ -1814,7 +1814,8 @@
       "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\n/**\n * VULNERABLE VAULT CONTRACT - FOR TESTING ONLY\n * Contains multiple intentional vulnerabilities for demonstration\n * DO NOT USE IN PRODUCT",
       "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\ncontract VulnerableDeFiProtocol {\n    // Existing state\n    mapping(address => uint256) public balances;\n    mapping(address => bool) public is",
       "// Simple test contract with some vulnerabilities\ncontract TestVault {\n    mapping(address => uint256) public balances;\n    \n    function deposit() external payable {\n        balances[msg.sender] += m",
-      "// Test contract with new vulnerability patterns\npragma solidity ^0.8.0;\n\ninterface IERC20 {\n    function transfer(address to, uint256 amount) external returns (bool);\n    function transferFrom(addres"
+      "// Test contract with new vulnerability patterns\npragma solidity ^0.8.0;\n\ninterface IERC20 {\n    function transfer(address to, uint256 amount) external returns (bool);\n    function transferFrom(addres",
+      "// Simple test contract\npragma solidity ^0.8.0;\n\ncontract SimpleTest {\n    mapping(address => uint256) public balances;\n    \n    function deposit() external payable {\n        balances[msg.sender] += m"
     ],
     "stale_oracle_price_exploitation": [
       "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\n/**\n * VULNERABLE VAULT CONTRACT - FOR TESTING ONLY\n * Contains multiple intentional vulnerabilities for demonstration\n * DO NOT USE IN PRODUCT",
@@ -1838,7 +1839,8 @@
       "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\n/**\n * VULNERABLE VAULT CONTRACT - FOR TESTING ONLY\n * Contains multiple intentional vulnerabilities for demonstration\n * DO NOT USE IN PRODUCT",
       "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\ncontract VulnerableDeFiProtocol {\n    // Existing state\n    mapping(address => uint256) public balances;\n    mapping(address => bool) public is",
       "// Simple test contract with some vulnerabilities\ncontract TestVault {\n    mapping(address => uint256) public balances;\n    \n    function deposit() external payable {\n        balances[msg.sender] += m",
-      "// Test contract with new vulnerability patterns\npragma solidity ^0.8.0;\n\ninterface IERC20 {\n    function transfer(address to, uint256 amount) external returns (bool);\n    function transferFrom(addres"
+      "// Test contract with new vulnerability patterns\npragma solidity ^0.8.0;\n\ninterface IERC20 {\n    function transfer(address to, uint256 amount) external returns (bool);\n    function transferFrom(addres",
+      "// Simple test contract\npragma solidity ^0.8.0;\n\ncontract SimpleTest {\n    mapping(address => uint256) public balances;\n    \n    function deposit() external payable {\n        balances[msg.sender] += m"
     ],
     "potential_backdoor": [
       "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\n/**\n * VULNERABLE VAULT CONTRACT - FOR TESTING ONLY\n * Contains multiple intentional vulnerabilities for demonstration\n * DO NOT USE IN PRODUCT",
@@ -1858,7 +1860,8 @@
     ],
     "Gas Griefing via Return Data": [
       "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\n/**\n * VULNERABLE VAULT CONTRACT - FOR TESTING ONLY\n * Contains multiple intentional vulnerabilities for demonstration\n * DO NOT USE IN PRODUCT",
-      "// Simple test contract with some vulnerabilities\ncontract TestVault {\n    mapping(address => uint256) public balances;\n    \n    function deposit() external payable {\n        balances[msg.sender] += m"
+      "// Simple test contract with some vulnerabilities\ncontract TestVault {\n    mapping(address => uint256) public balances;\n    \n    function deposit() external payable {\n        balances[msg.sender] += m",
+      "// Simple test contract\npragma solidity ^0.8.0;\n\ncontract SimpleTest {\n    mapping(address => uint256) public balances;\n    \n    function deposit() external payable {\n        balances[msg.sender] += m"
     ],
     "flash_loan_oracle_manipulation": [
       "// Test contract with new vulnerability patterns\npragma solidity ^0.8.0;\n\ninterface IERC20 {\n    function transfer(address to, uint256 amount) external returns (bool);\n    function transferFrom(addres"
@@ -1911,6 +1914,50 @@
       "last_updated": "2025-10-22T00:26:12.383825"
     }
   },
+  "prompt_effectiveness": {},
+  "prompt_performance": {},
+  "verification_weights": {
+    "weights": {
+      "static": 0.15,
+      "symbolic": 0.25,
+      "dynamic": 0.45,
+      "behavioral": 0.15,
+      "last_updated": "2025-10-22T00:51:46.517621"
+    },
+    "accuracy_history": {
+      "static": [],
+      "symbolic": [],
+      "dynamic": [],
+      "behavioral": []
+    }
+  },
+  "hypothesis_quality_trends": {
+    "avg_confidence_over_time": [
+      0.6333333333333332,
+      0.6333333333333332,
+      0.6333333333333332,
+      0.6333333333333332,
+      0.6333333333333332
+    ],
+    "false_positive_rate_over_time": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  "user_feedback_log": [
+    {
+      "vulnerability_id": "manual-flash_loan_oracle_manipulation",
+      "feedback_type": "confirmed",
+      "timestamp": "2025-10-22T00:51:46.517632",
+      "details": {},
+      "pattern_name": "flash_loan_oracle_manipulation"
+    }
+  ],
+  "last_updated": "2025-10-22T00:51:46.518038",
+  "total_scans": 8
   "prompt_effectiveness": {
     "divergent_exploration": {
       "avg_success_rate": 0.5,
