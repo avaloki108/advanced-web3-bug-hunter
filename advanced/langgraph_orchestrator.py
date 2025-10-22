@@ -448,9 +448,11 @@ class LangGraphOrchestrator:
     def _invoke_llm(self, prompt: str, temperature: float, model: Optional[str]) -> Any:
         if hasattr(self.llm_client, "query_llm"):
             return self.llm_client.query_llm(prompt, model=model or self.default_model, temperature=temperature)
-        if hasattr(self.llm_client, "_call_llm"):
-            return self.llm_client._call_llm(prompt, model=model or self.default_model, temperature=temperature)  # type: ignore[attr-defined]
-        return ""
+        raise NotImplementedError(
+            "llm_client must implement a public 'query_llm' method. "
+            "Accessing private methods like '_call_llm' is not supported. "
+            "Please update your llm_client to provide a public interface."
+        )
 
     def _safe_json_loads(self, payload: Any) -> Any:
         if isinstance(payload, (dict, list)):
