@@ -19,6 +19,13 @@ try:
 except ImportError:
     HAS_AI_HYPOTHESIS = False
 
+# Import prompt chaining components (optional)
+try:
+    from .prompt_chaining import PromptChainOrchestrator, PromptChainResult
+    HAS_PROMPT_CHAINING = True
+except ImportError:
+    HAS_PROMPT_CHAINING = False
+
 
 class ReasoningMode(Enum):
     ADVERSARIAL = "adversarial"  # Think like an attacker
@@ -59,6 +66,11 @@ class AdvancedLLMReasoner:
                 enable_poc_generation=False,  # Disable for compatibility
                 enable_learning=True
             )
+        
+        # Initialize prompt chain orchestrator if available
+        self.prompt_chain_orchestrator = None
+        if HAS_PROMPT_CHAINING:
+            self.prompt_chain_orchestrator = PromptChainOrchestrator(llm_client=self)
 
     def analyze_contract_multi_agent(self,
                                     contract_code: str,
@@ -681,6 +693,70 @@ Write for a technical audience (developers and auditors).
 
         response = self._call_llm(prompt, model="gpt-4-turbo", temperature=0.3)
         return response
+
+    def execute_prompt_chain(self,
+                            contract_code: str,
+                            contract_type: str = "unknown",
+                            static_analysis_results: Optional[Dict[str, Any]] = None,
+                            learned_patterns: Optional[List[str]] = None,
+                            creativity_level: str = "balanced",
+                            use_async: bool = False) -> Optional['PromptChainResult']:
+        """
+        Execute multi-stage prompt chaining for creative hypothesis generation
+        
+        Args:
+            contract_code: Solidity contract code
+            contract_type: Type of contract (vault, AMM, bridge, etc.)
+            static_analysis_results: Results from static analysis
+            learned_patterns: Patterns from learning database
+            creativity_level: conservative, balanced, or aggressive
+            use_async: Whether to use async execution (default: False for compatibility)
+            
+        Returns:
+            PromptChainResult with hypotheses and exploit scenarios, or None if not available
+        """
+        if not self.prompt_chain_orchestrator:
+            print("Warning: Prompt chain orchestrator not available")
+            return None
+        
+        try:
+            # Use synchronous wrapper by default for compatibility
+            result = self.prompt_chain_orchestrator.execute_chain_sync(
+                contract_code=contract_code,
+                contract_type=contract_type,
+                static_analysis_results=static_analysis_results,
+                learned_patterns=learned_patterns,
+                creativity_level=creativity_level
+            )
+            
+            return result
+        except Exception as e:
+            print(f"Error executing prompt chain: {e}")
+            return None
+
+    def get_enhanced_llm_prompt(self, 
+                               base_prompt: str,
+                               learned_patterns: Optional[List[str]] = None,
+                               context: Optional[Dict[str, Any]] = None) -> str:
+        """
+        Enhance LLM prompt with learned patterns from persistent learning DB
+        
+        Args:
+            base_prompt: Original prompt
+            learned_patterns: Patterns from learning database
+            context: Additional context
+            
+        Returns:
+            Enhanced prompt with learning context
+        """
+        if not learned_patterns:
+            return base_prompt
+        
+        enhancement = "\n\nLEARNED PATTERNS FROM PREVIOUS SCANS:\n"
+        enhancement += "\n".join(f"- {pattern}" for pattern in learned_patterns[:10])
+        enhancement += "\n\nConsider these patterns when analyzing the contract.\n"
+        
+        return base_prompt + enhancement
 
 
 def demonstrate_llm_reasoning():
