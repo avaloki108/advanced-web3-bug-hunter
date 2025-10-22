@@ -181,8 +181,10 @@ class AdvancedLLMReasoner:
             attack_scenarios = self._extract_attack_scenarios_from_run(run)
             confidence = self._extract_confidence_from_parsed(run.parsed_response)
             reasoning_chain = [run.role]
-            if isinstance(run.raw_response, str) and run.raw_response.strip():
-                reasoning_chain.append(run.raw_response.strip())
+            if isinstance(run.raw_response, str):
+                stripped_response = run.raw_response.strip()
+                if stripped_response:
+                    reasoning_chain.append(stripped_response)
 
             result = ReasoningResult(
                 mode=mode,
