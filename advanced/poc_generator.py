@@ -4,7 +4,7 @@ Generates Foundry/Hardhat test scripts for vulnerability hypotheses with safety 
 """
 
 from typing import List, Dict, Any, Optional
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from datetime import datetime
 import os
@@ -13,6 +13,8 @@ import tempfile
 import asyncio
 import subprocess
 import json
+
+from .exploit_template_loader import ExploitTemplateLoader
 
 
 class PoCFramework(Enum):
@@ -32,6 +34,11 @@ class PoCTemplate:
     setup_code: str
     exploit_code: str
     validation_code: str
+    template_id: str = ""
+    stage_plan: List[Dict[str, Any]] = field(default_factory=list)
+    detection_metadata: Dict[str, Any] = field(default_factory=dict)
+    historical_references: List[Dict[str, Any]] = field(default_factory=list)
+    provenance: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -414,7 +421,10 @@ class PoCGenerator:
     
     def __init__(self, framework: PoCFramework = PoCFramework.FOUNDRY):
         self.framework = framework
+        self.template_loader = ExploitTemplateLoader()
         self.poc_templates: Dict[str, PoCTemplate] = {}
+        self.template_usage_lookup: Dict[str, str] = {}
+        self.last_template_key: Optional[str] = None
         self.generated_pocs: List[PoCResult] = []
         self._initialize_templates()
         self.safety_validator = SafetyValidator()
@@ -712,12 +722,98 @@ contract Exploiter {{
             exploit_code="// Attack execution",
             validation_code="// Profit verification"
         ))
-    
-    def register_template(self, template: PoCTemplate):
+
+        self._load_dynamic_templates()
+
+    def register_template(self, template: PoCTemplate, replace_existing: bool = True):
         """Register a PoC template"""
         key = f"{template.framework.value}_{template.vulnerability_type}"
+        if not replace_existing and key in self.poc_templates:
+            return
+
         self.poc_templates[key] = template
-    
+        if template.template_id:
+            self.template_usage_lookup[key] = template.template_id
+
+    def _load_dynamic_templates(self) -> None:
+        """Load advanced templates from the YAML-driven template loader."""
+
+        if not self.template_loader:
+            return
+
+        framework_map = {framework.value: framework for framework in PoCFramework}
+
+        for template_def in self.template_loader.list_templates():
+            stage_plan = [stage.to_dict() for stage in template_def.stages]
+            for vuln_class in template_def.vulnerability_classes:
+                vuln_key = vuln_class.lower()
+
+                for framework_name, skeleton in template_def.poc_skeletons.items():
+                    if not isinstance(skeleton, dict):
+                        continue
+
+                    framework = framework_map.get(framework_name.lower())
+                    if not framework:
+                        # Try exact match if lower-case lookup fails
+                        framework = framework_map.get(framework_name)
+
+                    if not framework:
+                        continue
+
+                    template_code = skeleton.get("code", "")
+                    if not template_code:
+                        continue
+
+                    required_imports = skeleton.get("required_imports", []) or []
+                    setup_outline = skeleton.get("setup_outline", "")
+                    exploit_outline = skeleton.get("exploit_outline", "")
+                    validation_outline = skeleton.get("validation_outline", "")
+
+                    dynamic_template = PoCTemplate(
+                        framework=framework,
+                        vulnerability_type=vuln_key,
+                        template_code=template_code,
+                        required_imports=required_imports,
+                        setup_code=setup_outline,
+                        exploit_code=exploit_outline,
+                        validation_code=validation_outline,
+                        template_id=template_def.template_id,
+                        stage_plan=stage_plan,
+                        detection_metadata=template_def.detection_signatures,
+                        historical_references=template_def.historical_references,
+                        provenance=template_def.provenance,
+                    )
+
+                    self.register_template(dynamic_template)
+
+    def _build_template_context(self, template_key: Optional[str]) -> Optional[Dict[str, Any]]:
+        """Construct metadata context for the currently used template."""
+
+        if not template_key:
+            return None
+
+        template = self.poc_templates.get(template_key)
+        if not template:
+            return None
+
+        context: Dict[str, Any] = {}
+        if template.stage_plan:
+            context["stage_plan"] = template.stage_plan
+        if template.detection_metadata:
+            context["detection_signatures"] = template.detection_metadata
+        if template.historical_references:
+            context["historical_references"] = template.historical_references
+        if template.provenance:
+            context["provenance"] = template.provenance
+
+        template_id = self.template_usage_lookup.get(template_key)
+        if template_id:
+            record = self.template_loader.get_template(template_id)
+            if record:
+                context["metrics"] = dict(record.metrics)
+
+        return context or None
+
     def generate_poc(self,
                     hypothesis: Any,
                     contract_code: str,
@@ -731,11 +827,13 @@ contract Exploiter {{
         # Get template
         template_key = f"{self.framework.value}_{vuln_type}"
         template = self.poc_templates.get(template_key)
-        
+
         if not template:
+            self.last_template_key = None
             # Fallback to generic template
             return self._generate_generic_poc(hypothesis, contract_code, contract_name)
-        
+
+        self.last_template_key = template_key
         # Fill template with contract-specific information
         poc_code = template.template_code.format(
             contract_name=contract_name,
@@ -787,11 +885,32 @@ contract Exploiter {{
                     self.sandbox_executor.execute_poc(poc_code, contract_code, contract_name)
                 )
                 loop.close()
-                
+
                 result.update(execution_result)
             except Exception as e:
                 result['error'] = f"Execution failed: {str(e)}"
-        
+
+        template_context = None
+        template_id = None
+        if self.last_template_key:
+            template_id = self.template_usage_lookup.get(self.last_template_key)
+            execution_success = result.get("success") if execute else None
+            usage_context = {
+                "hypothesis_id": getattr(hypothesis, 'id', 'unknown'),
+                "contract_name": contract_name,
+                "framework": self.framework.value,
+            }
+            if template_id:
+                self.template_loader.record_usage(
+                    template_id,
+                    success=execution_success if execution_success is not None else None,
+                    context=usage_context,
+                )
+
+            template_context = self._build_template_context(self.last_template_key)
+            if template_context:
+                result["template_context"] = template_context
+
         # Store result
         poc_result = PoCResult(
             hypothesis_id=getattr(hypothesis, 'id', 'unknown'),
