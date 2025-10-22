@@ -1,0 +1,244 @@
+# Multi-Stage Prompt Chain Configuration
+# Defines stages, temperatures, and prompt templates for creative hypothesis generation
+
+# Global settings
+enabled: true
+max_parallel_stages: 2
+token_budget_per_stage: 2000
+retry_attempts: 3
+retry_delay: 2
+
+# Stage configurations
+stages:
+  divergent_exploration:
+    enabled: true
+    order: 1
+    temperature: 0.85
+    max_tokens: 2000
+    description: "High creativity exploration of unconventional attack vectors"
+    min_hypotheses: 20
+    
+  analogical_reasoning:
+    enabled: true
+    order: 2
+    temperature: 0.65
+    max_tokens: 1500
+    description: "Apply patterns from similar protocols and historical exploits"
+    
+  technical_validation:
+    enabled: true
+    order: 3
+    temperature: 0.35
+    max_tokens: 1500
+    description: "Filter technically impossible scenarios"
+    rejection_threshold: 0.6
+    
+  exploit_synthesis:
+    enabled: true
+    order: 4
+    temperature: 0.3
+    max_tokens: 2000
+    description: "Synthesize validated hypotheses into actionable exploit scenarios"
+
+# Prompt templates for each stage
+prompt_templates:
+  divergent_exploration: |
+    You are a creative security researcher exploring unconventional attack vectors.
+    
+    CONTRACT TYPE: {{contract_type}}
+    CONTRACT CODE:
+    ```solidity
+    {{contract_code}}
+    ```
+    
+    STATIC ANALYSIS HINTS:
+    {{static_analysis_summary}}
+    
+    TASK: Ignore conventional vulnerability patterns. Brainstorm unconventional attack vectors for this contract.
+    
+    FOCUS AREAS:
+    - Edge cases in token interactions (fee-on-transfer, rebasing, blacklists)
+    - Multi-step exploitation sequences across multiple transactions
+    - Cross-contract dependency manipulation
+    - Oracle and price feed vulnerabilities
+    - Bridge message verification bypasses
+    - Callback and reentrancy in unexpected places
+    - Economic game theory attacks
+    - Time-based and block-dependent exploits
+    - Flash loan attack vectors
+    - Governance manipulation scenarios
+    
+    Think like a creative attacker, not a pattern matcher. Generate at least 20 diverse attack hypotheses.
+    
+    For each hypothesis, provide:
+    1. Attack vector name
+    2. Brief description (1-2 sentences)
+    3. Initial plausibility (low/medium/high)
+    4. Required preconditions
+    
+    Format as JSON array:
+    [
+      {
+        "name": "Attack Name",
+        "description": "Brief description",
+        "plausibility": "medium",
+        "preconditions": ["condition1", "condition2"]
+      }
+    ]
+
+  analogical_reasoning: |
+    You are an expert in DeFi protocol security and historical exploits.
+    
+    CONTRACT TYPE: {{contract_type}}
+    CONTRACT CODE SUMMARY:
+    {{contract_summary}}
+    
+    HYPOTHESES FROM PREVIOUS STAGE:
+    {{previous_hypotheses}}
+    
+    KNOWN PATTERNS FROM LEARNING DB:
+    {{learned_patterns}}
+    
+    TASK: Identify transferable vulnerability patterns from similar protocols.
+    
+    REFERENCE PROTOCOLS AND EXPLOITS:
+    - Vault protocols (ERC-4626 inflation attacks, first depositor attacks)
+    - AMM protocols (sandwich attacks, liquidity manipulation)
+    - Lending protocols (oracle manipulation, collateral attacks)
+    - Bridge protocols (signature verification, message replay)
+    - Governance systems (flash loan voting, proposal griefing)
+    
+    HISTORICAL EXPLOITS TO CONSIDER:
+    - Nomad Bridge (initialization bug, $190M)
+    - Wormhole Bridge (signature verification, $325M)
+    - Cream Finance (reentrancy, $130M)
+    - Poly Network (access control, $611M)
+    - Ronin Bridge (validator compromise, $625M)
+    
+    For each hypothesis from the previous stage, provide:
+    1. Similar historical exploit (if any)
+    2. How the pattern could manifest in this contract
+    3. Confidence adjustment based on historical precedent
+    4. Additional attack variations
+    
+    Format as JSON array enhancing previous hypotheses:
+    [
+      {
+        "hypothesis_id": "from previous stage",
+        "historical_reference": "exploit name",
+        "manifestation": "how it applies here",
+        "confidence_adjustment": "+0.2 or -0.3",
+        "variations": ["variation1", "variation2"]
+      }
+    ]
+
+  technical_validation: |
+    You are a critical security analyst validating vulnerability hypotheses.
+    
+    CONTRACT CODE:
+    ```solidity
+    {{contract_code}}
+    ```
+    
+    HYPOTHESES TO VALIDATE:
+    {{hypotheses}}
+    
+    TASK: Critically evaluate each hypothesis for technical feasibility.
+    
+    ELIMINATE scenarios that are:
+    1. Technically impossible given Solidity/EVM constraints
+    2. Already mitigated by existing contract safeguards (modifiers, checks, require statements)
+    3. Based on misunderstandings of the code logic
+    4. Require unrealistic preconditions
+    
+    KEEP innovative ideas that ARE technically feasible, even if they seem unusual.
+    
+    For each hypothesis, provide:
+    1. Validation status (KEEP/REJECT)
+    2. Technical reasoning
+    3. Code evidence (function names, line references if available)
+    4. Revised confidence score (0.0-1.0)
+    5. Missing safeguards that make it exploitable
+    
+    Format as JSON array:
+    [
+      {
+        "hypothesis_id": "id",
+        "status": "KEEP or REJECT",
+        "reasoning": "technical explanation",
+        "code_evidence": ["function1", "missing check in function2"],
+        "confidence": 0.75,
+        "missing_safeguards": ["slippage check", "reentrancy guard"]
+      }
+    ]
+
+  exploit_synthesis: |
+    You are an expert exploit developer creating actionable attack scenarios.
+    
+    CONTRACT CODE:
+    ```solidity
+    {{contract_code}}
+    ```
+    
+    VALIDATED HYPOTHESES:
+    {{validated_hypotheses}}
+    
+    TASK: For each validated hypothesis, synthesize a complete exploit scenario.
+    
+    For each exploit scenario, provide:
+    1. Precise exploit conditions (what must be true)
+    2. Required attacker capabilities (flash loans, governance tokens, etc.)
+    3. Step-by-step attack sequence (transaction by transaction)
+    4. Expected impact (funds drained, DOS, governance takeover, etc.)
+    5. Estimated profitability (if applicable)
+    6. Difficulty rating (trivial/easy/moderate/hard/very hard)
+    
+    Format as structured JSON:
+    [
+      {
+        "name": "Exploit Name",
+        "vulnerability_type": "type",
+        "severity": "critical/high/medium/low",
+        "conditions": ["condition1", "condition2"],
+        "attacker_capabilities": ["capability1"],
+        "attack_sequence": [
+          {"step": 1, "action": "description", "function": "function_name"},
+          {"step": 2, "action": "description", "function": "function_name"}
+        ],
+        "impact": "description of impact",
+        "estimated_profit": "$X or N/A",
+        "difficulty": "moderate",
+        "confidence": 0.8
+      }
+    ]
+
+# Creativity levels (presets)
+creativity_levels:
+  conservative:
+    divergent_exploration: 0.6
+    analogical_reasoning: 0.5
+    technical_validation: 0.3
+    exploit_synthesis: 0.3
+    
+  balanced:
+    divergent_exploration: 0.85
+    analogical_reasoning: 0.65
+    technical_validation: 0.35
+    exploit_synthesis: 0.3
+    
+  aggressive:
+    divergent_exploration: 0.95
+    analogical_reasoning: 0.75
+    technical_validation: 0.4
+    exploit_synthesis: 0.35
+
+# Default creativity level
+default_creativity_level: "balanced"
+
+# Learning and optimization
+optimization:
+  enabled: true
+  min_scans_before_optimization: 10
+  success_pattern_boost: 0.1
+  false_positive_penalty: -0.05
+  track_stage_effectiveness: true

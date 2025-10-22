@@ -1892,13 +1892,13 @@
   "hypothesis_metrics": {
     "reentrancy": {
       "hypothesis_type": "reentrancy",
-      "total_generated": 2,
-      "verified_count": 0,
-      "rejected_count": 2,
-      "avg_initial_confidence": 0.8,
-      "avg_final_confidence": 0.6999999999999998,
-      "success_rate": 0.0,
-      "last_updated": "2025-10-22T00:26:12.383819"
+      "total_generated": 6,
+      "verified_count": 2,
+      "rejected_count": 4,
+      "avg_initial_confidence": 0.6,
+      "avg_final_confidence": 0.7666666666666666,
+      "success_rate": 0.3333333333333333,
+      "last_updated": "2025-10-22T00:55:00.561951"
     },
     "cross_contract": {
       "hypothesis_type": "cross_contract",
@@ -1911,8 +1911,23 @@
       "last_updated": "2025-10-22T00:26:12.383825"
     }
   },
-  "prompt_effectiveness": {},
-  "verification_layer_metrics": {},
-  "last_updated": "2025-10-22T00:55:49.909690",
-  "total_scans": 13
+  "prompt_effectiveness": {
+    "divergent_exploration": {
+      "avg_success_rate": 0.5,
+      "avg_fp_rate": 0.0,
+      "runs": 1
+    },
+    "technical_validation": {
+      "avg_success_rate": 0.5,
+      "avg_fp_rate": 0.0,
+      "runs": 1
+    },
+    "exploit_synthesis": {
+      "avg_success_rate": 0.5,
+      "avg_fp_rate": 0.0,
+      "runs": 1
+    }
+  },
+  "last_updated": "2025-10-22T00:55:00.566593",
+  "total_scans": 7
 }

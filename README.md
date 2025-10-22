@@ -28,12 +28,13 @@ cat *_report.json | python -m json.tool
 - [READY_TO_USE.md](READY_TO_USE.md) - System ready guide
 - [QUICKSTART.md](QUICKSTART.md) - 30-second quick start
 - [LLM_SETUP.md](LLM_SETUP.md) - Grok/Claude/OpenAI setup
+- [POC_GENERATION.md](POC_GENERATION.md) - **NEW:** Automated PoC generation guide
 - [ADVANCED_USAGE.md](ADVANCED_USAGE.md) - Detailed usage guide
 - [INSTALL.md](INSTALL.md) - Installation guide
 
 ## ✨ Features
 
-### 6 Advanced Modules (All Working ✓)
+### 7 Advanced Modules (All Working ✓)
 
 1. **Symbolic Execution** - Z3 SMT solver with mathematical proof of exploitability
 2. **Pattern Detection** - 20+ DeFi-specific patterns (NEW: 12 advanced patterns)
@@ -41,8 +42,19 @@ cat *_report.json | python -m json.tool
 4. **LLM Reasoning** - Grok/Claude/OpenAI support
 5. **Enhanced Fuzzing** - Multiple strategies
 6. **Auto-Learning** - Enhanced with automated pattern extraction from new hacks
+7. **🆕 PoC Generation** - Automated exploit demonstrations with safety framework
 
 ### 🆕 NEW POWERFUL CAPABILITIES
+
+**Automated PoC Generation:**
+- 🔬 Generates safe, runnable exploit demonstrations
+- 🔒 Comprehensive safety validation (no mainnet, no real funds)
+- 📝 Template-based + LLM-assisted generation
+- ✅ Supports reentrancy, oracle, flash loan, access control vulnerabilities
+- 🏃 Sandboxed execution in Foundry test environments
+- 📊 Automatic strategy selection and validation
+
+👉 **See [POC_GENERATION.md](POC_GENERATION.md) for complete PoC generation guide**
 
 **Finds Vulnerabilities Worth Millions:**
 - ✅ ERC-4626 Inflation Attacks ($80M+ in real exploits)
@@ -105,7 +117,8 @@ pip install -r requirements-core.txt
 - ✅ Detects vulnerabilities missed by 90% of auditors
 - ✅ Multi-agent LLM reasoning
 - ✅ Behavioral anomaly detection
-- ✅ Auto PoC generation
+- ✅ **🆕 Automated PoC generation with safety framework**
+- ✅ **🆕 Sandboxed exploit demonstration**
 
 **What senior auditors say this catches:**
 - Callback reentrancy (ERC777/ERC1155)
@@ -116,6 +129,14 @@ pip install -r requirements-core.txt
 - Precision loss in calculations
 - Front-runnable initialization
 - Cross-protocol reentrancy
+
+**🆕 PoC Generation Features:**
+- Automatic template-based PoC generation
+- LLM-assisted PoC for complex vulnerabilities
+- Comprehensive safety validation (no mainnet, no real funds)
+- Sandboxed Foundry execution
+- Support for 5+ vulnerability types
+- See [POC_GENERATION.md](POC_GENERATION.md) and `examples/poc_generation_demo.py`
 
 ## 📚 Learn More
 
