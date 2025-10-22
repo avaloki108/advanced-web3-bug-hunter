@@ -903,7 +903,7 @@ contract Exploiter {{
             if template_id:
                 self.template_loader.record_usage(
                     template_id,
-                    success=execution_success if execution_success is not None else None,
+                    success=execution_success,
                     context=usage_context,
                 )
 
