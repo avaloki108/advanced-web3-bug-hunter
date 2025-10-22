@@ -20,6 +20,7 @@ from advanced.enhanced_fuzzing_orchestrator import EnhancedFuzzingOrchestrator, 
 from advanced.persistent_learning import PersistentLearningDB, get_learning_db
 from advanced.benchmark_comparison import BenchmarkSystem
 from advanced.rare_vulnerability_detectors import RareVulnerabilityDetector
+from advanced.poc_generator import AutomatedPoCGenerator, PoCFramework
 
 # Import existing modules (optional dependencies)
 try:
@@ -43,6 +44,7 @@ class AdvancedWeb3BugHunter:
     - Behavioral anomaly detection
     - Multi-agent LLM reasoning
     - Enhanced fuzzing
+    - Automated PoC generation
     """
 
     def __init__(self, contract_path: str, config: Dict[str, Any] = None):
@@ -54,11 +56,16 @@ class AdvancedWeb3BugHunter:
         self.symbolic_executor = AdvancedSymbolicExecutor()
         self.pattern_detector = NovelPatternDetector()
         self.anomaly_detector = BehavioralAnomalyDetector()
-        self.rare_detector = RareVulnerabilityDetector()  # NEW: Rare vulnerability detector
+        self.rare_detector = RareVulnerabilityDetector()
         self.llm_reasoner = AdvancedLLMReasoner(
             openai_key=self.config.get('openai_key'),
             anthropic_key=self.config.get('anthropic_key')
         )
+        
+        # Initialize PoC generator
+        self.poc_generator = AutomatedPoCGenerator(
+            frameworks=[PoCFramework.FOUNDRY]
+        ) if self.config.get('enable_poc_generation', True) else None
         
         # Initialize learning system
         self.learning_db = get_learning_db()
@@ -67,7 +74,8 @@ class AdvancedWeb3BugHunter:
             "contract": str(self.contract_path),
             "timestamp": self.start_time.isoformat(),
             "analysis_results": {},
-            "learning_enhanced": True
+            "learning_enhanced": True,
+            "poc_generation_enabled": self.poc_generator is not None
         }
 
     def run_comprehensive_analysis(self) -> Dict[str, Any]:
@@ -78,6 +86,8 @@ class AdvancedWeb3BugHunter:
         print("="*70)
         print(" ADVANCED WEB3 BUG HUNTER - COMPREHENSIVE ANALYSIS")
         print(" 🧠 LEARNING-ENABLED: Tool improves with every scan!")
+        if self.poc_generator:
+            print(" 🔬 PoC GENERATION: Automated exploit demonstrations")
         print("="*70)
         print(f"Contract: {self.contract_path}")
         print(f"Timestamp: {self.results['timestamp']}")
@@ -97,7 +107,7 @@ class AdvancedWeb3BugHunter:
         contract_name = self.contract_path.stem
 
         # Phase 1: Pattern Detection
-        print("\n[1/6] Running Novel Pattern Detection...")
+        print("\n[1/8] Running Novel Pattern Detection...")
         print("-" * 70)
         patterns = self.pattern_detector.detect_all_patterns(contract_code, contract_name)
         self.results["analysis_results"]["novel_patterns"] = {
@@ -110,7 +120,7 @@ class AdvancedWeb3BugHunter:
         self._print_pattern_summary(patterns)
 
         # Phase 2: Behavioral Anomaly Detection
-        print("\n[2/7] Running Behavioral Anomaly Detection...")
+        print("\n[2/8] Running Behavioral Anomaly Detection...")
         print("-" * 70)
         anomalies = self.anomaly_detector.analyze_contract(contract_code, contract_name)
         self.results["analysis_results"]["anomalies"] = {
@@ -123,7 +133,7 @@ class AdvancedWeb3BugHunter:
         self._print_anomaly_summary(anomalies)
         
         # Phase 2.5: Rare & Niche Vulnerability Detection (NEW!)
-        print("\n[2.5/7] Running Rare & Niche Vulnerability Detection...")
+        print("\n[2.5/8] Running Rare & Niche Vulnerability Detection...")
         print("-" * 70)
         print("🔍 Searching for obscure vulnerabilities that standard tools miss...")
         rare_vulns = self.rare_detector.detect_all(contract_code)
@@ -144,7 +154,7 @@ class AdvancedWeb3BugHunter:
             print("No rare vulnerabilities detected (good sign!)")
 
         # Phase 3: Symbolic Execution
-        print("\n[3/7] Running Symbolic Execution Analysis...")
+        print("\n[3/8] Running Symbolic Execution Analysis...")
         print("-" * 70)
         symbolic_results = self._run_symbolic_analysis(contract_code)
         self.results["analysis_results"]["symbolic_execution"] = symbolic_results
@@ -153,7 +163,7 @@ class AdvancedWeb3BugHunter:
         # Phase 4: LLM Multi-Agent Reasoning (WITH LEARNING!)
         llm_insights = []
         if self.config.get('use_llm', True) and HAS_LLM:
-            print("\n[4/7] Running LLM Multi-Agent Reasoning (Enhanced with Learning)...")
+            print("\n[4/8] Running LLM Multi-Agent Reasoning (Enhanced with Learning)...")
             print("-" * 70)
             
             # Get enhanced prompt with learned patterns
@@ -189,20 +199,116 @@ class AdvancedWeb3BugHunter:
             except:
                 pass  # Error already handled above
         else:
-            print("\n[4/7] Skipping LLM analysis (disabled or unavailable)")
+            print("\n[4/8] Skipping LLM analysis (disabled or unavailable)")
 
         # Phase 5: Enhanced Fuzzing
         if self.config.get('use_fuzzing', True):
-            print("\n[5/7] Running Enhanced Fuzzing Campaign...")
+            print("\n[5/8] Running Enhanced Fuzzing Campaign...")
             print("-" * 70)
             fuzzing_results = self._run_enhanced_fuzzing(contract_code)
             self.results["analysis_results"]["fuzzing"] = fuzzing_results
             print(f"Fuzzing campaign completed")
         else:
-            print("\n[5/7] Skipping fuzzing (disabled in config)")
+            print("\n[5/8] Skipping fuzzing (disabled in config)")
+        
+        # Phase 5.5: Automated PoC Generation (NEW!)
+        poc_results = []
+        if self.poc_generator and self.config.get('generate_pocs', True):
+            print("\n[5.5/8] 🔬 Generating Proof-of-Concept Exploits...")
+            print("-" * 70)
+            print("Generating PoCs for detected vulnerabilities...")
+            
+            # Collect high-confidence vulnerabilities for PoC generation
+            vulnerabilities_for_poc = []
+            
+            # Add critical/high severity rare vulnerabilities
+            for vuln in rare_vulns:
+                if vuln.severity in ['critical', 'high'] and vuln.confidence >= 0.7:
+                    vulnerabilities_for_poc.append(vuln)
+            
+            # Add high-confidence patterns
+            for pattern in patterns:
+                if pattern.severity in ['critical', 'high'] and pattern.confidence >= 0.8:
+                    vulnerabilities_for_poc.append(pattern)
+            
+            # Add critical anomalies
+            for anomaly in anomalies:
+                if anomaly.severity == 'critical' and anomaly.confidence >= 0.75:
+                    vulnerabilities_for_poc.append(anomaly)
+            
+            # Limit to top 5 vulnerabilities to avoid long execution times
+            vulnerabilities_for_poc = vulnerabilities_for_poc[:5]
+            
+            print(f"Selected {len(vulnerabilities_for_poc)} high-priority vulnerabilities for PoC generation")
+            
+            # Generate PoCs
+            import asyncio
+            for i, vuln in enumerate(vulnerabilities_for_poc, 1):
+                vuln_name = getattr(vuln, 'name', 'Unknown')
+                print(f"\n  [{i}/{len(vulnerabilities_for_poc)}] Generating PoC for: {vuln_name}")
+                
+                try:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    poc_result = loop.run_until_complete(
+                        self.poc_generator.generate_and_test_poc(
+                            vuln,
+                            contract_code,
+                            contract_name,
+                            execute_in_sandbox=self.config.get('execute_pocs', False)
+                        )
+                    )
+                    loop.close()
+                    
+                    if poc_result.get('success'):
+                        print(f"    ✓ PoC generated using '{poc_result.get('strategy_used', 'unknown')}' strategy")
+                        if poc_result.get('safety_validated'):
+                            print(f"    ✓ Safety validated")
+                        if self.config.get('execute_pocs', False):
+                            if poc_result.get('exploit_demonstrated'):
+                                print(f"    ✓ Exploit successfully demonstrated in sandbox")
+                            else:
+                                print(f"    ⚠️  PoC generated but exploit not demonstrated")
+                    else:
+                        print(f"    ✗ Failed to generate PoC: {poc_result.get('error', 'Unknown error')}")
+                    
+                    poc_results.append({
+                        'vulnerability': vuln_name,
+                        'severity': getattr(vuln, 'severity', 'unknown'),
+                        'poc_generated': poc_result.get('success', False),
+                        'strategy': poc_result.get('strategy_used', 'none'),
+                        'safety_validated': poc_result.get('safety_validated', False),
+                        'exploit_demonstrated': poc_result.get('exploit_demonstrated', False),
+                        'poc_code_preview': poc_result.get('poc_code', '')[:200] + '...' if poc_result.get('poc_code') else ''
+                    })
+                    
+                except Exception as e:
+                    print(f"    ✗ Error generating PoC: {str(e)}")
+                    poc_results.append({
+                        'vulnerability': vuln_name,
+                        'error': str(e)
+                    })
+            
+            # Store PoC results
+            self.results["analysis_results"]["poc_generation"] = {
+                "total_vulnerabilities_analyzed": len(vulnerabilities_for_poc),
+                "pocs_generated": len([p for p in poc_results if p.get('poc_generated')]),
+                "pocs_safety_validated": len([p for p in poc_results if p.get('safety_validated')]),
+                "exploits_demonstrated": len([p for p in poc_results if p.get('exploit_demonstrated')]),
+                "results": poc_results,
+                "statistics": self.poc_generator.get_statistics() if self.poc_generator else {}
+            }
+            
+            print(f"\n✓ PoC Generation Summary:")
+            print(f"  Total PoCs generated: {len([p for p in poc_results if p.get('poc_generated')])}/{len(vulnerabilities_for_poc)}")
+            print(f"  Safety validated: {len([p for p in poc_results if p.get('safety_validated')])}")
+            if self.config.get('execute_pocs', False):
+                print(f"  Exploits demonstrated: {len([p for p in poc_results if p.get('exploit_demonstrated')])}")
+        else:
+            print("\n[5.5/8] Skipping PoC generation (disabled in config)")
 
         # Phase 6: Generate Final Report & LEARN!
-        print("\n[6/7] Generating Comprehensive Report & Recording Learning...")
+        print("\n[6/8] Generating Comprehensive Report & Recording Learning...")
         print("-" * 70)
         self._generate_final_report()
         
