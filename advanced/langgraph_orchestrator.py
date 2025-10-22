@@ -337,7 +337,7 @@ class LangGraphOrchestrator:
             },
         )
 
-        response = self._invoke_llm(prompt, config.get("temperature", 0.2), config.get("model"))
+        response = self._invoke_llm(prompt, config.get("temperature", 0.25), config.get("model"))
         parsed = self._safe_json_loads(response)
 
         decision = self._extract_decision(parsed, response, default="approve")
@@ -362,7 +362,7 @@ class LangGraphOrchestrator:
             {
                 "agent": "self_evaluation",
                 "role": "Self-Evaluation Agent",
-                "temperature": config.get("temperature", 0.2),
+                "temperature": config.get("temperature", 0.25),
                 "prompt": prompt,
                 "raw_response": response,
                 "parsed": parsed,
