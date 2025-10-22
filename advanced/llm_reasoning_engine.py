@@ -2,6 +2,8 @@
 Advanced LLM Reasoning Engine for Vulnerability Discovery
 Multi-agent approach with specialized reasoning modules
 Combines GPT-4, Claude, and local models for comprehensive analysis
+
+Enhanced with AI Hypothesis System integration for improved vulnerability discovery
 """
 
 from typing import List, Dict, Any, Optional, Tuple
@@ -9,6 +11,13 @@ from dataclasses import dataclass, field
 from enum import Enum
 import json
 import os
+
+# Import AI hypothesis system components (optional)
+try:
+    from .ai_hypothesis_system import AIHypothesisSystem
+    HAS_AI_HYPOTHESIS = True
+except ImportError:
+    HAS_AI_HYPOTHESIS = False
 
 
 class ReasoningMode(Enum):
@@ -41,15 +50,45 @@ class AdvancedLLMReasoner:
         self.openai_key = openai_key or os.getenv("OPENAI_API_KEY")
         self.anthropic_key = anthropic_key or os.getenv("ANTHROPIC_API_KEY")
         self.reasoning_history: List[ReasoningResult] = []
+        
+        # Initialize AI hypothesis system if available
+        self.ai_hypothesis_system = None
+        if HAS_AI_HYPOTHESIS:
+            self.ai_hypothesis_system = AIHypothesisSystem(
+                llm_client=self,
+                enable_poc_generation=False,  # Disable for compatibility
+                enable_learning=True
+            )
 
     def analyze_contract_multi_agent(self,
                                     contract_code: str,
                                     static_analysis_results: Dict[str, Any],
-                                    contract_type: str = "unknown") -> List[ReasoningResult]:
+                                    contract_type: str = "unknown",
+                                    use_ai_hypothesis: bool = True) -> List[ReasoningResult]:
         """
         Run multiple reasoning agents in parallel for comprehensive analysis
+        
+        Args:
+            use_ai_hypothesis: If True and available, use AI hypothesis system for enhanced analysis
         """
         results = []
+
+        # Enhanced: AI Hypothesis System (if available)
+        if use_ai_hypothesis and self.ai_hypothesis_system:
+            try:
+                hypothesis_report = self.ai_hypothesis_system.analyze_contract(
+                    contract_code=contract_code,
+                    contract_name=contract_type,
+                    contract_type=contract_type,
+                    static_analysis_results=static_analysis_results,
+                    generate_pocs=False
+                )
+                
+                # Convert hypothesis findings to reasoning results
+                hypothesis_result = self._convert_hypothesis_to_reasoning(hypothesis_report)
+                results.append(hypothesis_result)
+            except Exception as e:
+                print(f"AI Hypothesis System error: {e}")
 
         # Agent 1: Adversarial Reasoning
         results.append(self._adversarial_reasoning(contract_code, static_analysis_results))
@@ -550,6 +589,55 @@ For each pattern match:
                 unique.append(finding)
 
         return unique
+    
+    def _convert_hypothesis_to_reasoning(self, hypothesis_report) -> ReasoningResult:
+        """
+        Convert AI hypothesis system report to ReasoningResult format
+        Enables integration with existing multi-agent system
+        """
+        findings = []
+        attack_scenarios = []
+        
+        # Extract verified vulnerabilities
+        for vuln in hypothesis_report.verified_vulnerabilities:
+            findings.append({
+                "type": vuln['type'],
+                "severity": vuln['severity'],
+                "confidence": vuln['confidence'],
+                "description": vuln['description'],
+                "location": ', '.join(vuln.get('affected_functions', []))
+            })
+            
+            if vuln.get('attack_scenario'):
+                attack_scenarios.append(vuln['attack_scenario'])
+        
+        # Extract uncertain findings with lower confidence
+        for uncertain in hypothesis_report.uncertain_findings:
+            findings.append({
+                "type": uncertain['type'],
+                "severity": "medium",
+                "confidence": uncertain['confidence'],
+                "description": uncertain['description'],
+                "location": "unknown"
+            })
+        
+        # Determine overall confidence
+        confidences = [f['confidence'] for f in findings]
+        overall_confidence = sum(confidences) / len(confidences) if confidences else 0.0
+        
+        return ReasoningResult(
+            mode=ReasoningMode.ADVERSARIAL,  # AI hypotheses are adversarial in nature
+            findings=findings,
+            attack_scenarios=attack_scenarios,
+            property_tests=[],
+            confidence=overall_confidence,
+            reasoning_chain=[
+                f"Generated {hypothesis_report.hypotheses_generated} hypotheses",
+                f"Verified {len(hypothesis_report.verified_vulnerabilities)} vulnerabilities",
+                f"Confidence improvement: {hypothesis_report.confidence_improvement:+.2f}"
+            ],
+            references=[]
+        )
 
     def generate_fuzzing_harness(self,
                                 contract_code: str,

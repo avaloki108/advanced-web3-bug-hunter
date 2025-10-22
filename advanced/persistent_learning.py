@@ -35,6 +35,19 @@ class PatternEffectiveness:
     false_positives: int
     last_updated: str
     confidence_score: float
+
+
+@dataclass
+class HypothesisQualityMetrics:
+    """Track quality of AI-generated hypotheses"""
+    hypothesis_type: str
+    total_generated: int
+    verified_count: int
+    rejected_count: int
+    avg_initial_confidence: float
+    avg_final_confidence: float
+    success_rate: float
+    last_updated: str
     
 
 class PersistentLearningDB:
@@ -49,6 +62,8 @@ class PersistentLearningDB:
         self.pattern_effectiveness: Dict[str, PatternEffectiveness] = {}
         self.vulnerability_corpus: Dict[str, List[str]] = {}  # Type -> examples
         self.accuracy_history: List[float] = []
+        self.hypothesis_metrics: Dict[str, HypothesisQualityMetrics] = {}  # Track hypothesis quality
+        self.prompt_effectiveness: Dict[str, float] = {}  # Track prompt effectiveness
         self._load_database()
         
     def _load_database(self):
@@ -79,6 +94,17 @@ class PersistentLearningDB:
                 # Load accuracy history
                 if 'accuracy_history' in data:
                     self.accuracy_history = data['accuracy_history']
+                
+                # Load hypothesis metrics
+                if 'hypothesis_metrics' in data:
+                    self.hypothesis_metrics = {
+                        name: HypothesisQualityMetrics(**metrics)
+                        for name, metrics in data['hypothesis_metrics'].items()
+                    }
+                
+                # Load prompt effectiveness
+                if 'prompt_effectiveness' in data:
+                    self.prompt_effectiveness = data['prompt_effectiveness']
                     
                 print(f"✓ Loaded learning database: {len(self.learning_records)} records")
             except Exception as e:
@@ -95,6 +121,11 @@ class PersistentLearningDB:
                 },
                 'vulnerability_corpus': self.vulnerability_corpus,
                 'accuracy_history': self.accuracy_history,
+                'hypothesis_metrics': {
+                    name: asdict(metrics)
+                    for name, metrics in self.hypothesis_metrics.items()
+                },
+                'prompt_effectiveness': self.prompt_effectiveness,
                 'last_updated': datetime.now().isoformat(),
                 'total_scans': len(self.learning_records)
             }
@@ -308,6 +339,138 @@ Provide detailed analysis with specific code references.
 """
         
         return prompt
+    
+    def track_hypothesis_quality(self,
+                                hypothesis_type: str,
+                                initial_confidence: float,
+                                final_confidence: float,
+                                verified: bool):
+        """
+        Track quality metrics for AI-generated hypotheses
+        Helps improve prompt strategies over time
+        """
+        if hypothesis_type not in self.hypothesis_metrics:
+            self.hypothesis_metrics[hypothesis_type] = HypothesisQualityMetrics(
+                hypothesis_type=hypothesis_type,
+                total_generated=0,
+                verified_count=0,
+                rejected_count=0,
+                avg_initial_confidence=0.0,
+                avg_final_confidence=0.0,
+                success_rate=0.0,
+                last_updated=datetime.now().isoformat()
+            )
+        
+        metrics = self.hypothesis_metrics[hypothesis_type]
+        
+        # Update counts
+        metrics.total_generated += 1
+        if verified:
+            metrics.verified_count += 1
+        else:
+            metrics.rejected_count += 1
+        
+        # Update averages (running average)
+        total = metrics.total_generated
+        metrics.avg_initial_confidence = (
+            (metrics.avg_initial_confidence * (total - 1) + initial_confidence) / total
+        )
+        metrics.avg_final_confidence = (
+            (metrics.avg_final_confidence * (total - 1) + final_confidence) / total
+        )
+        
+        # Update success rate
+        metrics.success_rate = metrics.verified_count / metrics.total_generated
+        metrics.last_updated = datetime.now().isoformat()
+        
+    def update_prompt_effectiveness(self, prompt_id: str, effectiveness_score: float):
+        """
+        Track effectiveness of specific prompts
+        Helps identify which prompts generate best hypotheses
+        """
+        self.prompt_effectiveness[prompt_id] = effectiveness_score
+        
+    def get_hypothesis_quality_report(self) -> Dict[str, Any]:
+        """Get report on hypothesis generation quality"""
+        if not self.hypothesis_metrics:
+            return {
+                "total_hypotheses": 0,
+                "message": "No hypothesis data available yet"
+            }
+        
+        total_hypotheses = sum(m.total_generated for m in self.hypothesis_metrics.values())
+        total_verified = sum(m.verified_count for m in self.hypothesis_metrics.values())
+        
+        return {
+            "total_hypotheses_generated": total_hypotheses,
+            "total_verified": total_verified,
+            "overall_success_rate": total_verified / total_hypotheses if total_hypotheses > 0 else 0.0,
+            "by_type": {
+                name: {
+                    "total": m.total_generated,
+                    "verified": m.verified_count,
+                    "success_rate": m.success_rate,
+                    "avg_initial_confidence": m.avg_initial_confidence,
+                    "avg_final_confidence": m.avg_final_confidence,
+                    "confidence_improvement": m.avg_final_confidence - m.avg_initial_confidence
+                }
+                for name, m in self.hypothesis_metrics.items()
+            },
+            "best_performing_types": sorted(
+                [
+                    (name, m.success_rate) 
+                    for name, m in self.hypothesis_metrics.items()
+                ],
+                key=lambda x: x[1],
+                reverse=True
+            )[:5]
+        }
+    
+    def get_prompt_recommendations(self) -> Dict[str, Any]:
+        """Get recommendations for prompt optimization"""
+        if not self.hypothesis_metrics:
+            return {"message": "Insufficient data for recommendations"}
+        
+        recommendations = []
+        
+        # Analyze hypothesis types
+        for name, metrics in self.hypothesis_metrics.items():
+            if metrics.total_generated < 5:
+                continue
+                
+            # Low success rate - adjust temperature/prompt
+            if metrics.success_rate < 0.3:
+                recommendations.append({
+                    "type": name,
+                    "issue": "low_success_rate",
+                    "current_rate": metrics.success_rate,
+                    "recommendation": "Lower temperature for more precise hypotheses"
+                })
+            
+            # High false positive rate
+            elif metrics.success_rate > 0.8 and metrics.avg_initial_confidence < 0.5:
+                recommendations.append({
+                    "type": name,
+                    "issue": "low_initial_confidence",
+                    "recommendation": "Increase creative temperature to explore more"
+                })
+            
+            # Good performance - confidence improving
+            elif metrics.success_rate > 0.6 and (metrics.avg_final_confidence - metrics.avg_initial_confidence) > 0.2:
+                recommendations.append({
+                    "type": name,
+                    "issue": "good_performance",
+                    "recommendation": "Current prompt strategy working well"
+                })
+        
+        return {
+            "recommendations": recommendations,
+            "best_prompts": sorted(
+                self.prompt_effectiveness.items(),
+                key=lambda x: x[1],
+                reverse=True
+            )[:5]
+        }
         
     def suggest_improvements(self) -> List[str]:
         """Suggest improvements based on learning data"""
