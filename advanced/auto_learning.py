@@ -8,7 +8,6 @@ Uses LLM to analyze hack descriptions and generate new detection rules
 import json
 import logging
 import os
-from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
