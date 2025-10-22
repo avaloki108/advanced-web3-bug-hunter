@@ -898,9 +898,9 @@
       "pattern_name": "potential_backdoor",
       "times_detected": 5,
       "true_positives": 5,
-      "false_positives": 0,
-      "last_updated": "2025-10-21T12:45:04.613205",
-      "confidence_score": 1.0
+      "false_positives": 1,
+      "last_updated": "2025-10-22T00:51:46.414710",
+      "confidence_score": 0.8333333333333334
     },
     "unchecked_call_return_value": {
       "pattern_name": "unchecked_call_return_value",
@@ -937,9 +937,9 @@
     "flash_loan_oracle_manipulation": {
       "pattern_name": "flash_loan_oracle_manipulation",
       "times_detected": 1,
-      "true_positives": 1,
+      "true_positives": 2,
       "false_positives": 0,
-      "last_updated": "2025-10-21T12:45:04.613193",
+      "last_updated": "2025-10-22T00:51:46.517638",
       "confidence_score": 1.0
     },
     "callback_reentrancy_vulnerability": {
@@ -1074,7 +1074,7 @@
       "symbolic": 0.25,
       "dynamic": 0.45,
       "behavioral": 0.15,
-      "last_updated": "2025-10-22T00:50:24.208797"
+      "last_updated": "2025-10-22T00:51:46.517621"
     },
     "accuracy_history": {
       "static": [],
@@ -1087,15 +1087,27 @@
     "avg_confidence_over_time": [
       0.6333333333333332,
       0.6333333333333332,
+      0.6333333333333332,
+      0.6333333333333332,
       0.6333333333333332
     ],
     "false_positive_rate_over_time": [
       1.0,
       1.0,
+      1.0,
+      1.0,
       1.0
     ]
   },
-  "user_feedback_log": [],
-  "last_updated": "2025-10-22T00:50:24.235394",
+  "user_feedback_log": [
+    {
+      "vulnerability_id": "manual-flash_loan_oracle_manipulation",
+      "feedback_type": "confirmed",
+      "timestamp": "2025-10-22T00:51:46.517632",
+      "details": {},
+      "pattern_name": "flash_loan_oracle_manipulation"
+    }
+  ],
+  "last_updated": "2025-10-22T00:51:46.518038",
   "total_scans": 8
 }
