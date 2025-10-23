@@ -81,3 +81,13 @@ cache/
 # Patterns directory (learned patterns - may want to version control)
 patterns/*.json
 !patterns/.gitkeep
+
+# Replit
+.pythonlibs/
+.upm/
+.cache/
+.config/
+replit.nix
+.replit
+pyproject.toml
+poetry.lock
