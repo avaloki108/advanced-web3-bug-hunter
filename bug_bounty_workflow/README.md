@@ -26,10 +26,50 @@ source ../.venv/bin/activate
 export XAI_API_KEY="your-grok-key"
 ```
 
-### 2. Run Elite Audit
+### 2. Create Scope File (Optional but Recommended)
 ```bash
-# Complete elite audit
+# Create a scope.txt file in your target directory
+cat > ~/bounties/protocol/scope.txt << 'EOF'
+# Bug Bounty Scope
+## In Scope
+- Vault.sol (main vault contract)
+- Token.sol (governance token)
+- Governor.sol (governance contract)
+
+## Out of Scope
+- MockToken.sol (test token)
+- TestVault.sol (test contract)
+
+## Target Functions
+- Vault.sol:deposit()
+- Vault.sol:withdraw()
+- Governor.sol:propose()
+
+## Severity Focus
+- Critical: Fund drainage, governance takeover
+- High: Access control bypass, reentrancy
+
+## Vulnerability Types
+- Reentrancy vulnerabilities
+- Access control bypasses
+- Oracle manipulation
+- Flash loan attacks
+
+## Platform
+- Immunefi
+
+## Prize
+- Max: $50,000
+EOF
+```
+
+### 3. Run Elite Audit
+```bash
+# Complete elite audit (automatically detects and follows scope.txt)
 ./scripts/elite-bug-bounty-hunt.sh elite-audit ~/bounties/protocol/
+
+# Analyze scope first
+./scripts/elite-bug-bounty-hunt.sh analyze-scope ~/bounties/protocol/
 
 # Quick triage hunt
 ./scripts/elite-bug-bounty-hunt.sh quick-hunt ~/bounties/protocol/Vault.sol
@@ -78,50 +118,66 @@ export XAI_API_KEY="your-grok-key"
 
 ## 📊 Audit Phases
 
-### Phase 0: Pre-Build Recon
+### Phase 0: Scope Analysis
+- **Automatic scope.txt detection** and parsing
+- **Scope guidance generation** for focused hunting
+- **Agent priority adjustment** based on scope
+- **Platform-specific optimization** (Immunefi, HackenProof, etc.)
+
+### Phase 1: Pre-Build Recon
 - Architecture mapping and surface identification
 - Static analysis and pattern detection
 - Access control and permission analysis
 
-### Phase 1: Build & Compile
+### Phase 2: Build & Compile
 - Project detection and setup
 - Dependency installation and compilation
 - Test execution and validation
 
-### Phase 2: Context & Architecture
+### Phase 3: Context & Architecture
 - Protocol interpretation and context
 - Financial flow analysis (lite mode)
 
-### Phase 3: Hunting
+### Phase 4: Hunting
 - 10 specialized hunter agents
+- **Scope-filtered hunting** (only in-scope contracts/functions)
 - Batched execution (3 → 3 → 4)
 - Comprehensive vulnerability discovery
 
-### Phase 4: Triage Gate
+### Phase 5: Triage Gate
 - Bounty feasibility filtering
 - Impact assessment and prioritization
+- **Scope compliance validation**
 
-### Phase 5-7: Disproof Council
+### Phase 6-8: Disproof Council
 - **Validators**: Confirm PoCs and validate findings
 - **Skeptics**: Attack assumptions and refute weak claims
 - **Adversaries**: Test real-world exploitability
 
-### Phase 8: Economic Deep Dive
+### Phase 9: Economic Deep Dive
 - Financial flow analysis (deep mode)
 - Capital requirements and profitability
 - MEV opportunities and economic impact
 
-### Phase 9: Mastermind Synthesis
+### Phase 10: Mastermind Synthesis
 - Final logic synthesis and arbitration
 - Invariant analysis and stress testing
 - Bounty report core generation
 
-### Phase 10: Reporting
+### Phase 11: Reporting
 - Professional report generation
 - PoC creation and validation
 - Submission-ready documentation
 
 ## 🎯 Key Features
+
+### Intelligent Scope Analysis
+- **Automatic scope.txt detection** in target directories
+- **Smart scope parsing** with pattern recognition
+- **Agent priority adjustment** based on scope focus
+- **Scope-filtered hunting** (only in-scope contracts/functions)
+- **Platform-specific optimization** (Immunefi, HackenProof, etc.)
+- **Exclusion handling** (out-of-scope contracts/functions)
 
 ### Multi-Agent Coordination
 - **≤4 concurrent agents** globally
@@ -259,12 +315,69 @@ config = OrchestratorConfig(
 - **Investigate further**: 0.5 (Worth deeper look)
 - **Ignore**: 0.3 (Likely false positive)
 
+## 📋 Scope File Format
+
+The system automatically detects and parses `scope.txt` files in your target directories. Here's the supported format:
+
+```txt
+# Bug Bounty Scope
+## In Scope
+- Vault.sol (main vault contract)
+- Token.sol (governance token)
+- Governor.sol (governance contract)
+
+## Out of Scope
+- MockToken.sol (test token)
+- TestVault.sol (test contract)
+
+## Target Functions
+- Vault.sol:deposit()
+- Vault.sol:withdraw()
+- Governor.sol:propose()
+
+## Severity Focus
+- Critical: Fund drainage, governance takeover
+- High: Access control bypass, reentrancy
+
+## Vulnerability Types
+- Reentrancy vulnerabilities
+- Access control bypasses
+- Oracle manipulation
+- Flash loan attacks
+
+## Exclusions
+- Gas optimization issues
+- Code quality issues
+
+## Platform
+- Immunefi
+
+## Prize
+- Max: $50,000
+```
+
+### Supported Scope Elements:
+- **In Scope**: Contracts and functions to focus on
+- **Out of Scope**: Contracts and functions to exclude
+- **Target Functions**: Specific functions to analyze
+- **Severity Focus**: Priority levels and impact types
+- **Vulnerability Types**: Specific vulnerability patterns to hunt
+- **Exclusions**: What to ignore
+- **Platform**: Bounty platform (affects optimization)
+- **Prize**: Maximum prize amounts (affects confidence thresholds)
+
 ## 🚀 Usage Examples
 
 ### Complete Elite Audit
 ```bash
-# Full audit with all agents
+# Full audit with all agents (automatically detects scope.txt)
 ./scripts/elite-bug-bounty-hunt.sh elite-audit ~/bounties/protocol/
+```
+
+### Scope Analysis
+```bash
+# Analyze scope.txt file and generate guidance
+./scripts/elite-bug-bounty-hunt.sh analyze-scope ~/bounties/protocol/
 ```
 
 ### Quick Triage Hunt

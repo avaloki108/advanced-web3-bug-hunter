@@ -61,6 +61,18 @@ cmd_elite_audit() {
     log_info "🚀 Starting Elite Web3 Bug Bounty Audit"
     log_info "📁 Target: $target_path"
     
+    # Check for scope.txt file
+    if [ -f "$target_path/scope.txt" ]; then
+        log_info "📋 Found scope.txt - will analyze and follow scope"
+    elif [ -f "$target_path/SCOPE.txt" ]; then
+        log_info "📋 Found SCOPE.txt - will analyze and follow scope"
+    elif [ -f "$target_path/scope.md" ]; then
+        log_info "📋 Found scope.md - will analyze and follow scope"
+    else
+        log_warning "No scope.txt file found - proceeding with comprehensive analysis"
+        log_info "💡 Tip: Create a scope.txt file to focus the hunt on specific contracts/functions"
+    fi
+    
     if [ -n "$output_dir" ]; then
         log_info "📁 Output: $output_dir"
     fi
@@ -177,6 +189,34 @@ cmd_agent_status() {
     echo ""
 }
 
+# Command: analyze-scope <target_path>
+# Analyzes scope.txt file and provides guidance
+cmd_analyze_scope() {
+    local target_path="$1"
+    
+    if [ -z "$target_path" ]; then
+        log_error "Usage: $0 analyze-scope <target_path>"
+        return 1
+    fi
+    
+    if [ ! -d "$target_path" ] && [ ! -f "$target_path" ]; then
+        log_error "Target path does not exist: $target_path"
+        return 1
+    fi
+    
+    log_info "📋 Analyzing scope for: $target_path"
+    
+    # Run scope analyzer
+    python3 "$SCRIPT_DIR/scope_analyzer.py" "$target_path"
+    
+    if [ $? -eq 0 ]; then
+        log_success "Scope analysis completed!"
+    else
+        log_error "Scope analysis failed!"
+        return 1
+    fi
+}
+
 # Command: help
 # Shows help information
 cmd_help() {
@@ -187,6 +227,7 @@ cmd_help() {
     echo "  elite-audit <target_path> [output_dir]  - Complete elite audit"
     echo "  quick-hunt <target_path>                - Quick triage hunt"
     echo "  deep-hunt <target_path>                  - Deep analysis hunt"
+    echo "  analyze-scope <target_path>              - Analyze scope.txt file"
     echo "  agent-status                            - Show agent status"
     echo "  help                                    - Show this help"
     echo ""
@@ -194,7 +235,12 @@ cmd_help() {
     echo "  $0 elite-audit ~/bounties/protocol/"
     echo "  $0 quick-hunt ~/bounties/protocol/Vault.sol"
     echo "  $0 deep-hunt ~/bounties/protocol/"
+    echo "  $0 analyze-scope ~/bounties/protocol/"
     echo "  $0 agent-status"
+    echo ""
+    echo "Scope File:"
+    echo "  Create a scope.txt file in your target directory to focus the hunt"
+    echo "  The tool will automatically detect and follow scope constraints"
     echo ""
     echo "Environment Setup:"
     echo "  source ../.venv/bin/activate"
@@ -215,6 +261,9 @@ case "$COMMAND" in
         ;;
     deep-hunt)
         cmd_deep_hunt "$@"
+        ;;
+    analyze-scope)
+        cmd_analyze_scope "$@"
         ;;
     agent-status)
         cmd_agent_status

@@ -369,7 +369,7 @@ class AdvancedLLMReasoner:
                     api_key=os.getenv("XAI_API_KEY"), base_url="https://api.x.ai/v1"
                 )
                 response = client.chat.completions.create(
-                    model="grok-beta",
+                    model="grok-3",
                     messages=[{"role": "user", "content": prompt}],
                     max_tokens=2000,
                     temperature=temperature,
@@ -660,38 +660,53 @@ For each pattern match:
         Call LLM API (OpenAI, Anthropic, or local)
         In production, this would make actual API calls
         """
-        # Placeholder - in production, this would call actual LLM APIs
-        mock_response = """
-        MOCK LLM RESPONSE (Replace with actual API call)
-
-        Based on analysis of the provided contract:
-
-        FINDINGS:
-        1. Potential reentrancy in withdraw function
-        2. Missing slippage protection in swap
-        3. Oracle price could be manipulated
-
-        ATTACK SCENARIOS:
-        - Flash loan attack to manipulate price oracle
-        - Sandwich attack on unprotected swaps
-        - Cross-function reentrancy between withdraw and deposit
-
-        PROPERTY TESTS:
-        - echidna_balance_conservation: totalSupply == sum(balances)
-        - echidna_no_negative_balance: forall user, balance[user] >= 0
-        - echidna_price_bounds: price >= MIN_PRICE && price <= MAX_PRICE
-
-        REASONING:
-        The contract uses block.timestamp for time-dependent logic, which can be
-        manipulated by miners within a 15-second window. Combined with the lack
-        of slippage protection, this creates an MEV opportunity.
-
-        REFERENCES:
-        - Similar vulnerability in Project X (2023)
-        - See: https://example.com/vulnerability-report
-        """
-
-        return mock_response
+        try:
+            # Try XAI/Grok first (preferred)
+            if os.getenv("XAI_API_KEY"):
+                from openai import OpenAI
+                
+                client = OpenAI(
+                    api_key=os.getenv("XAI_API_KEY"), 
+                    base_url="https://api.x.ai/v1"
+                )
+                response = client.chat.completions.create(
+                    model="grok-3",
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=2000,
+                    temperature=temperature,
+                )
+                return response.choices[0].message.content
+            
+            # Try OpenAI
+            elif self.openai_key:
+                from openai import OpenAI
+                
+                client = OpenAI(api_key=self.openai_key)
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=2000,
+                    temperature=temperature,
+                )
+                return response.choices[0].message.content
+            
+            # Try Anthropic/Claude
+            elif self.anthropic_key:
+                import anthropic
+                
+                client = anthropic.Anthropic(api_key=self.anthropic_key)
+                message = client.messages.create(
+                    model="claude-3-opus-20240229",
+                    max_tokens=2000,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                return message.content[0].text
+            
+            else:
+                return "LLM API key not configured. Set XAI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY."
+        
+        except Exception as e:
+            return f"LLM Error: {str(e)}"
 
     def _parse_adversarial_response(self, response: str) -> List[Dict[str, Any]]:
         """Parse LLM response for adversarial findings"""
