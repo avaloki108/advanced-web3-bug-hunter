@@ -23,3 +23,12 @@ mypy==1.8.0
 python-dotenv==1.0.0
 rich==13.7.0  # Pretty terminal output
 PyYAML>=6.0
+anthropic
+black
+langgraph
+openai
+pytest
+python-dotenv
+PyYAML
+rich
+z3-solver
