@@ -9269,71 +9269,217 @@
         "{'type': 'reentrancy', 'severity': 'high', 'confidence': 0.8, 'description': 'Potential reentrancy vulnerability', 'location': 'withdraw function'}",
         "{'type': 'slippage_missing', 'severity': 'medium', 'confidence': 0.7, 'description': 'Missing slippage protection', 'location': 'swap function'}"
       ]
+    },
+    {
+      "id": "SCAN-20251023-132640-3a1a67a2",
+      "timestamp": "2025-10-23T13:26:40.445623",
+      "contract_hash": "3a1a67a2b94134e0",
+      "vulnerabilities_found": [
+        "just_in_time_liquidity_attack",
+        "stale_oracle_price_exploitation",
+        "cross_function_reentrancy",
+        "cross_function_reentrancy",
+        "cross_function_reentrancy",
+        "cross_function_reentrancy",
+        "cross_function_reentrancy",
+        "read_only_reentrancy",
+        "twap_manipulation_short_window",
+        "callback_reentrancy_vulnerability",
+        "multiple_external_calls_no_guard",
+        "multiple_external_calls_no_guard",
+        "multiple_external_calls_no_guard",
+        "multiple_external_calls_no_guard",
+        "potential_backdoor",
+        "unchecked_call_return_value",
+        "unchecked_call_return_value",
+        "unchecked_call_return_value",
+        "Gas Griefing via Return Data"
+      ],
+      "false_positives_marked": [],
+      "patterns_extracted": [
+        {
+          "type": "just_in_time_liquidity_attack",
+          "severity": "medium",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "stale_oracle_price_exploitation",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "cross_function_reentrancy",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "cross_function_reentrancy",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "cross_function_reentrancy",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "cross_function_reentrancy",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "cross_function_reentrancy",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "read_only_reentrancy",
+          "severity": "medium",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "twap_manipulation_short_window",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "callback_reentrancy_vulnerability",
+          "severity": "critical",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "multiple_external_calls_no_guard",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "multiple_external_calls_no_guard",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "multiple_external_calls_no_guard",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "multiple_external_calls_no_guard",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "potential_backdoor",
+          "severity": "critical",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "unchecked_call_return_value",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "unchecked_call_return_value",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "unchecked_call_return_value",
+          "severity": "high",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        },
+        {
+          "type": "Gas Griefing via Return Data",
+          "severity": "medium",
+          "indicators": [],
+          "detection_strategy": "static_analysis"
+        }
+      ],
+      "accuracy_score": 1.0,
+      "processing_time": 12.440904,
+      "llm_insights": []
     }
   ],
   "pattern_effectiveness": {
     "just_in_time_liquidity_attack": {
       "pattern_name": "just_in_time_liquidity_attack",
-      "times_detected": 35,
-      "true_positives": 35,
+      "times_detected": 36,
+      "true_positives": 36,
       "false_positives": 0,
-      "last_updated": "2025-10-22T17:58:36.211178",
+      "last_updated": "2025-10-23T13:26:40.445638",
       "confidence_score": 1.0
     },
     "stale_oracle_price_exploitation": {
       "pattern_name": "stale_oracle_price_exploitation",
-      "times_detected": 20,
-      "true_positives": 20,
+      "times_detected": 21,
+      "true_positives": 21,
       "false_positives": 0,
-      "last_updated": "2025-10-22T17:58:36.211180",
+      "last_updated": "2025-10-23T13:26:40.445642",
       "confidence_score": 1.0
     },
     "cross_function_reentrancy": {
       "pattern_name": "cross_function_reentrancy",
-      "times_detected": 299,
-      "true_positives": 299,
+      "times_detected": 304,
+      "true_positives": 304,
       "false_positives": 0,
-      "last_updated": "2025-10-22T17:58:36.211185",
+      "last_updated": "2025-10-23T13:26:40.445656",
       "confidence_score": 1.0
     },
     "read_only_reentrancy": {
       "pattern_name": "read_only_reentrancy",
-      "times_detected": 95,
-      "true_positives": 95,
+      "times_detected": 96,
+      "true_positives": 96,
       "false_positives": 0,
-      "last_updated": "2025-10-22T17:58:36.211186",
+      "last_updated": "2025-10-23T13:26:40.445661",
       "confidence_score": 1.0
     },
     "twap_manipulation_short_window": {
       "pattern_name": "twap_manipulation_short_window",
-      "times_detected": 15,
-      "true_positives": 15,
+      "times_detected": 16,
+      "true_positives": 16,
       "false_positives": 0,
-      "last_updated": "2025-10-22T17:58:36.211187",
+      "last_updated": "2025-10-23T13:26:40.445663",
       "confidence_score": 1.0
     },
     "multiple_external_calls_no_guard": {
       "pattern_name": "multiple_external_calls_no_guard",
-      "times_detected": 158,
-      "true_positives": 158,
+      "times_detected": 162,
+      "true_positives": 162,
       "false_positives": 0,
-      "last_updated": "2025-10-22T17:58:36.211191",
+      "last_updated": "2025-10-23T13:26:40.445674",
       "confidence_score": 1.0
     },
     "potential_backdoor": {
       "pattern_name": "potential_backdoor",
-      "times_detected": 39,
-      "true_positives": 39,
+      "times_detected": 40,
+      "true_positives": 40,
       "false_positives": 0,
-      "last_updated": "2025-10-22T17:58:36.211192",
+      "last_updated": "2025-10-23T13:26:40.445676",
       "confidence_score": 1.0
     },
     "unchecked_call_return_value": {
       "pattern_name": "unchecked_call_return_value",
-      "times_detected": 78,
-      "true_positives": 78,
+      "times_detected": 81,
+      "true_positives": 81,
       "false_positives": 0,
-      "last_updated": "2025-10-22T17:58:36.211193",
+      "last_updated": "2025-10-23T13:26:40.445682",
       "confidence_score": 1.0
     },
     "flash_loan_governance_attack": {
@@ -9354,10 +9500,10 @@
     },
     "Gas Griefing via Return Data": {
       "pattern_name": "Gas Griefing via Return Data",
-      "times_detected": 30,
-      "true_positives": 30,
+      "times_detected": 31,
+      "true_positives": 31,
       "false_positives": 0,
-      "last_updated": "2025-10-22T17:58:36.211194",
+      "last_updated": "2025-10-23T13:26:40.445684",
       "confidence_score": 1.0
     },
     "flash_loan_oracle_manipulation": {
@@ -9370,10 +9516,10 @@
     },
     "callback_reentrancy_vulnerability": {
       "pattern_name": "callback_reentrancy_vulnerability",
-      "times_detected": 32,
-      "true_positives": 32,
+      "times_detected": 33,
+      "true_positives": 33,
       "false_positives": 0,
-      "last_updated": "2025-10-22T17:58:36.211188",
+      "last_updated": "2025-10-23T13:26:40.445666",
       "confidence_score": 1.0
     },
     "unchecked_erc20_return_values": {
@@ -10147,6 +10293,7 @@
     1.0,
     1.0,
     1.0,
+    1.0,
     1.0
   ],
   "hypothesis_metrics": {
@@ -10195,7 +10342,7 @@
       "symbolic": 0.25,
       "dynamic": 0.45,
       "behavioral": 0.15,
-      "last_updated": "2025-10-22T17:58:24.686702"
+      "last_updated": "2025-10-23T13:26:28.281076"
     },
     "accuracy_history": {
       "static": [],
@@ -10211,6 +10358,7 @@
       0.6333333333333332,
       0.6333333333333332,
       0.6333333333333332,
+      0.7285714285714285,
       0.7285714285714285,
       0.7285714285714285,
       0.7285714285714285,
@@ -10617,11 +10765,12 @@
       0.7142857142857143,
       0.7142857142857143,
       0.7142857142857143,
+      0.7142857142857143,
       0.7142857142857143
     ]
   },
   "user_feedback_log": [],
   "verification_layer_metrics": {},
-  "last_updated": "2025-10-22T17:58:36.226896",
-  "total_scans": 217
+  "last_updated": "2025-10-23T13:26:40.540537",
+  "total_scans": 218
 }
